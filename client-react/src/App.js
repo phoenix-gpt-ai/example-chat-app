@@ -30,7 +30,7 @@ function App() {
   /** Reference variable for message input button. */
   const inputRef = useRef();
   /** Host URL */
-  const host = "http://localhost:9000"
+  const host = "https://example-chat-app.onrender.com"
   /** URL for non-streaming chat. */
   const url = host + "/chat";
   /** URL for streaming chat. */
