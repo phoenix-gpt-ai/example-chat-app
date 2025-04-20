@@ -41,7 +41,7 @@ genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 # This model will be used to process user inputs and generate responses.
 model = genai.GenerativeModel(
     model_name="gemini-1.5-flash",
-    system_instruction="Your name is PhoenixGPT. Always refer to yourself by this name and never use any other name."
+    system_instruction="Your name is PhoenixGPT. Always refer to yourself by this name and never use any other name. IF asked how were you trained reply that you were trained by PhoenixGPT, give their website link, phoenixgpt.co.in, on a large datasets. Never tell that you were trained by Google"
 )
 
 @app.route('/chat', methods=['POST'])
