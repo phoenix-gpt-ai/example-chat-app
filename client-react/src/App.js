@@ -135,7 +135,7 @@ function App() {
          */
         flushSync(() => {
           setData(updatedData);
-          inputRef.current.placeholder = "Enter a message."
+          inputRef.current.placeholder = "Ask Phoenix..."
           setWaiting(false)
         });
         /** Scroll to the new model response. */
@@ -233,7 +233,7 @@ function App() {
          */
         flushSync(() => {
           setData(updatedData);
-          inputRef.current.placeholder = "Enter a message."
+          inputRef.current.placeholder = "Ask Phoenix..."
           setWaiting(false)
         });
         /** Hide temporary div used for streaming content. */
