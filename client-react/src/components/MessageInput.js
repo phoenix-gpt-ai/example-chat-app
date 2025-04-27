@@ -28,7 +28,7 @@ const MessageInput = ({ inputRef, waiting, handleClick }) => {
         className="chat_msg_input"
         type="text"
         name="chat"
-        placeholder="Enter a message."
+        placeholder="Ask Phoenix..."
         ref={inputRef}
         disabled={waiting}
         onKeyDown={(e) => {
