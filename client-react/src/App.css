@@ -102,7 +102,6 @@ body {
   display: flex;
 }
 
-
 .message-input {
   display: flex;
   border: solid 1px #505261;
@@ -134,43 +133,43 @@ body {
 .chat-header > img {
   height: 35px; 
   width: 100px;
-  }
+}
 
 .chat-header > p {
-    position: relative;
-    display: inline-block;
-    margin-left: 10px;
-    bottom: 1px;
-    font-size: 2vw;
-    color: #4991e8;
-  }
+  position: relative;
+  display: inline-block;
+  margin-left: 10px;
+  bottom: 1px;
+  font-size: 2vw;
+  color: #4991e8;
+}
 
 .user > img {
   height: 30px; 
   max-width: 30px;
   border-radius: 50%;
   flex-grow: 1;
-  }
+}
 
 .user > p {
-    position: relative;
-    display: inline;
-    bottom: 3vh;
-    font-size: 1em;
-    margin-left: 15px;
-    border-radius: 25px;
-    padding: 0px 15px 0px 15px;
-    background-color: #ece2e2;
-    color: #000000;
-    border: solid 1px #505261;
-  }
+  position: relative;
+  display: inline;
+  bottom: 3vh;
+  font-size: 1em;
+  margin-left: 15px;
+  border-radius: 25px;
+  padding: 0px 15px 0px 15px;
+  background-color: #ece2e2;
+  color: #000000;
+  border: solid 1px #505261;
+}
 
 .model > img {
   height: 30px; 
   max-width: 30px;
   border-radius: 50%;
   flex-grow: 1;
-  }
+}
 
 .model > p {
   position: relative;
@@ -212,15 +211,15 @@ body {
 }
 
 .toggle-btn {
- background-color: rgb(134, 167, 196);
- border: 1px solid #aaa;
- border-radius: 99px;
- width: 50px;
- height: 28px;
- transition: background-color 0.1s ease, border-color 0.2s ease;
- cursor: pointer;
- box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.748);
- position: relative;
+  background-color: rgb(134, 167, 196);
+  border: 1px solid #aaa;
+  border-radius: 99px;
+  width: 50px;
+  height: 28px;
+  transition: background-color 0.1s ease, border-color 0.2s ease;
+  cursor: pointer;
+  box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.748);
+  position: relative;
 }
 
 .toggle-text {
@@ -231,7 +230,7 @@ body {
   font-size: 1.1em;
   font-weight: 600;
   color: #4991e6;
- }
+}
 
 .toggle-btn .thumb{
   height: 20px;
@@ -288,4 +287,142 @@ body {
   color: black;
   position: relative;
   left: 15px;
+}
+
+/* Mobile-specific styles */
+@media screen and (max-width: 768px) {
+  /* Adjust chat app to full width on mobile */
+  .chat-app {
+    width: 100vw;
+    height: 100vh;
+  }
+
+  /* Header adjustments for mobile */
+  .chat-header {
+    padding: 15px 15px 10px 15px;
+    flex-wrap: wrap;
+  }
+
+  .chat-header > img {
+    height: 30px; 
+    width: 80px;
+  }
+
+  .chat-header > p {
+    font-size: 4.5vw;
+    margin-left: 8px;
+    bottom: 0px;
+  }
+
+  /* Chat area padding adjustment */
+  .chat-area {
+    padding: 10px 15px;
+    padding-top: 10px;
+  }
+
+  /* Message styling for mobile */
+  .user, .model, .tempResponse {
+    margin-right: 0;
+    margin-bottom: 15px;
+    padding: 8px;
+  }
+
+  .user > p, .model > p, .tempResponse > p {
+    bottom: 0;
+    margin-left: 12px;
+    font-size: 16px;
+    padding: 12px 16px;
+    max-width: calc(100vw - 80px);
+    word-wrap: break-word;
+    line-height: 1.4;
+  }
+
+  .user > img, .model > img, .tempResponse > img {
+    height: 32px;
+    max-width: 32px;
+    flex-shrink: 0;
+    align-self: flex-start;
+    margin-top: 5px;
+  }
+
+  /* Input area adjustments */
+  .message-input {
+    margin: 15px;
+    margin-bottom: 20px;
+  }
+
+  .chat_msg_input {
+    font-size: 16px;
+    padding: 12px 12px 12px 20px;
+    height: 45px;
+  }
+
+  .chat_msg_btn {
+    padding: 8px 15px;
+    font-size: 18px;
+  }
+
+  /* Welcome text for mobile */
+  .welcome-1, .welcome-2 {
+    font-size: 2.2em;
+    padding: 0 15px;
+  }
+
+  /* Toggle adjustments */
+  .toggle-text {
+    font-size: 1em;
+    margin-right: 12px;
+  }
+
+  /* Scrollbar adjustments for mobile */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  /* Send button positioning */
+  .fa-span-send {
+    left: 8px;
+  }
+}
+
+/* Extra small mobile devices */
+@media screen and (max-width: 480px) {
+  .chat-header > p {
+    font-size: 5.5vw;
+  }
+
+  .user > p, .model > p, .tempResponse > p {
+    font-size: 15px;
+    padding: 10px 14px;
+    max-width: calc(100vw - 70px);
+  }
+
+  .chat_msg_input {
+    font-size: 15px;
+    padding: 10px 10px 10px 18px;
+    height: 40px;
+  }
+
+  .welcome-1, .welcome-2 {
+    font-size: 1.8em;
+  }
+
+  .toggle-text {
+    font-size: 0.9em;
+  }
+}
+
+/* Landscape mobile orientation */
+@media screen and (max-width: 768px) and (orientation: landscape) {
+  .chat-area {
+    padding-top: 5px;
+  }
+
+  .welcome-1, .welcome-2 {
+    font-size: 1.5em;
+  }
+
+  .chat-header {
+    padding: 10px 15px 5px 15px;
+  }
 }
