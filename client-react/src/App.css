@@ -138,6 +138,7 @@ html, body {
   max-width: 85%;
   margin: 0;
   box-shadow: 0 2px 8px rgba(0,123,255,0.15);
+  text-align: justify;
 }
 
 .model > p, .tempResponse > p {
@@ -153,6 +154,7 @@ html, body {
   max-width: 85%;
   margin: 0;
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  text-align: justify;
 }
 
 .message-input {
