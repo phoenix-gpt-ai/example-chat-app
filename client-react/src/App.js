@@ -16,7 +16,7 @@
  */
 
 /** Import necessary modules. */
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import { flushSync } from 'react-dom';
 import './App.css';
@@ -35,24 +35,75 @@ function App() {
   const url = host + "/chat";
   /** URL for streaming chat. */
   const streamUrl = host + "/stream";
-  /** State variable for message history. */
-  const [data, setData] = useState([]);
+  
+  /** State variable for message history with persistence. */
+  const [data, setData] = useState(() => {
+    // Load chat history from localStorage on component initialization
+    try {
+      const savedHistory = localStorage.getItem('phoenixChatHistory');
+      return savedHistory ? JSON.parse(savedHistory) : [];
+    } catch (error) {
+      console.error('Error loading chat history:', error);
+      return [];
+    }
+  });
+  
   /** State variable for Temporary streaming block. */
   const [answer, setAnswer] = useState("")
   /** State variable to show/hide temporary streaming block. */
   const [streamdiv, showStreamdiv] = useState(false);
-  /** State variable to toggle between streaming and non-streaming response. */
-  const [toggled, setToggled] = useState(false);
+  
+  /** State variable to toggle between streaming and non-streaming response with persistence. */
+  const [toggled, setToggled] = useState(() => {
+    // Load streaming preference from localStorage
+    try {
+      const savedToggle = localStorage.getItem('phoenixStreamingEnabled');
+      return savedToggle ? JSON.parse(savedToggle) : false;
+    } catch (error) {
+      console.error('Error loading streaming preference:', error);
+      return false;
+    }
+  });
+  
   /** 
    * State variable used to block the user from inputting the next message until
    * the previous conversation is completed.
    */
   const [waiting, setWaiting] = useState(false);
+  
   /** 
    * `is_stream` checks whether streaming is on or off based on the state of 
    * toggle button.
    */
   const is_stream = toggled;
+
+  /** Save chat history to localStorage whenever data changes */
+  useEffect(() => {
+    try {
+      localStorage.setItem('phoenixChatHistory', JSON.stringify(data));
+    } catch (error) {
+      console.error('Error saving chat history:', error);
+    }
+  }, [data]);
+
+  /** Save streaming preference to localStorage whenever toggled changes */
+  useEffect(() => {
+    try {
+      localStorage.setItem('phoenixStreamingEnabled', JSON.stringify(toggled));
+    } catch (error) {
+      console.error('Error saving streaming preference:', error);
+    }
+  }, [toggled]);
+
+  /** Function to clear chat history */
+  const clearChatHistory = () => {
+    setData([]);
+    try {
+      localStorage.removeItem('phoenixChatHistory');
+    } catch (error) {
+      console.error('Error clearing chat history:', error);
+    }
+  };
 
   /** Function to scroll smoothly to the top of the mentioned checkpoint. */
   function executeScroll() {
@@ -124,6 +175,7 @@ function App() {
         modelResponse = response.data.text
       } catch (error) {
         modelResponse = "Error occurred";
+        console.error('API Error:', error);
       }finally {
         /** Add model response to the history. */
         const updatedData = [...ndata,
@@ -221,6 +273,7 @@ function App() {
         }
       } catch (err) {
         modelResponse = "Error occurred";
+        console.error('Streaming Error:', err);
       } finally {
         /** Clear temporary div content. */
         setAnswer("")
@@ -248,7 +301,12 @@ function App() {
   return (
     <center>
       <div className="chat-app">
-        <Header toggled={toggled} setToggled={setToggled} />
+        <Header 
+          toggled={toggled} 
+          setToggled={setToggled} 
+          clearChatHistory={clearChatHistory}
+          hasHistory={data.length > 0}
+        />
         <ConversationDisplayArea data={data} streamdiv={streamdiv} answer={answer} />
         <MessageInput inputRef={inputRef} waiting={waiting} handleClick={handleClick} />
       </div>
