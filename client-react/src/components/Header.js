@@ -3,7 +3,7 @@ import React from 'react';
 const Header = ({ toggled, setToggled, clearChatHistory, hasHistory }) => {
   return (
     <div className="chat-header">
-      <h1>Phoenix</h1>
+      <h1>Phoenix, by PhoenixGPT</h1>
       <div className="toggle-container">
         {hasHistory && (
           <button 
