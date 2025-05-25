@@ -147,6 +147,48 @@ html, body {
   border: 2px solid #e9ecef;
 }
 
+.message-content {
+  position: relative;
+  max-width: 85%;
+}
+
+.user .message-content {
+  width: 100%;
+  max-width: 85%;
+}
+
+.user > .message-content > p {
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  color: #ffffff;
+  border-radius: 20px 20px 4px 20px;
+  padding: 12px 16px;
+  font-size: 16px;
+  line-height: 1.4;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  margin: 0;
+  box-shadow: 0 2px 8px rgba(0,123,255,0.15);
+  text-align: justify;
+  width: 100%;
+}
+
+.model > .message-content > p, .tempResponse > .message-content > p {
+  background-color: #ffffff;
+  color: #212529;
+  border: 1px solid #e9ecef;
+  border-radius: 20px 20px 20px 4px;
+  padding: 12px 16px;
+  font-size: 16px;
+  line-height: 1.4;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  margin: 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  text-align: justify;
+  width: 100%;
+}
+
+/* For backward compatibility with existing structure */
 .user > p {
   background: linear-gradient(135deg, #007bff, #0056b3);
   color: #ffffff;
@@ -176,6 +218,41 @@ html, body {
   margin: 0;
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
   text-align: justify;
+}
+
+/* Copy button styles */
+.copy-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(108, 117, 125, 0.1);
+  border: 1px solid rgba(108, 117, 125, 0.2);
+  border-radius: 6px;
+  padding: 4px 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  opacity: 0;
+  visibility: hidden;
+  backdrop-filter: blur(4px);
+  color: #6c757d;
+  z-index: 10;
+}
+
+.message-content:hover .copy-btn {
+  opacity: 1;
+  visibility: visible;
+}
+
+.copy-btn:hover {
+  background: rgba(108, 117, 125, 0.2);
+  border-color: rgba(108, 117, 125, 0.4);
+  color: #495057;
+  transform: scale(1.05);
+}
+
+.copy-btn:active {
+  transform: scale(0.95);
 }
 
 .message-input {
@@ -394,7 +471,11 @@ html, body {
     font-size: 15px;
   }
 
-  .user > p, .model > p, .tempResponse > p {
+  .message-content {
+    max-width: 80%;
+  }
+
+  .user .message-content, .model .message-content, .tempResponse .message-content {
     max-width: 80%;
   }
 
@@ -440,8 +521,15 @@ html, body {
     gap: 20px;
   }
 
-  .user > p, .model > p, .tempResponse > p {
+  .message-content {
     max-width: 75%;
+  }
+
+  .user .message-content, .model .message-content, .tempResponse .message-content {
+    max-width: 75%;
+  }
+
+  .user > .message-content > p, .model > .message-content > p, .tempResponse > .message-content > p {
     font-size: 15px;
   }
 
@@ -539,10 +627,23 @@ html, body {
     color: #cccccc;
   }
 
+  .model > .message-content > p, .tempResponse > .message-content > p,
   .model > p, .tempResponse > p {
     background-color: #2d2d2d;
     color: #ffffff;
     border-color: #404040;
+  }
+
+  .copy-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #cccccc;
+  }
+
+  .copy-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.4);
+    color: #ffffff;
   }
 
   .message-input {
