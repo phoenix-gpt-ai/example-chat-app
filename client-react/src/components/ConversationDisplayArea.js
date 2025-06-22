@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Markdown from 'react-markdown';
 import userIcon from '../assets/user-icon.png';
 // TODO: Consider replacing chatbotIcon with its own distinct icon.
-import chatbotIcon from '../assets/user-icon.png'
+import chatbotIcon from '../public/favicon.ico'
 
 const ChatArea = ({ data, streamdiv, answer }) => {
   const [copiedIndex, setCopiedIndex] = useState(null);
