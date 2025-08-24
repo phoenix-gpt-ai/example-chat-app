@@ -292,7 +292,7 @@ def chat():
         # Check if this is a multipart request (file upload)
         if request.files and 'file' in request.files:
             # Handle file upload
-            msg = request.form.get('chat', '')
+            msg = request.form.get('chat', '').strip()
             history_str = request.form.get('history', '[]')
             try:
                 chat_history = json.loads(history_str) if history_str else []
@@ -304,7 +304,7 @@ def chat():
                 # Extract text from file
                 extracted_text = extract_text_from_file(file)
                 # Combine extracted text with user message
-                if msg.strip():
+                if msg:
                     combined_message = f"Document content:\n{extracted_text}\n\nUser question: {msg}"
                 else:
                     combined_message = f"Document content:\n{extracted_text}\n\nPlease analyze this document."
@@ -315,7 +315,7 @@ def chat():
             if request.is_json:
                 data = request.get_json()
                 if data:
-                    msg = data.get('chat', '')
+                    msg = data.get('chat', '').strip()
                     chat_history = data.get('history', [])
                     combined_message = msg
                 else:
@@ -323,7 +323,8 @@ def chat():
             else:
                 return jsonify({"error": "Content-Type not supported"}), 400
 
-        if not combined_message.strip():
+        # Check that we have either a message or a file with content
+        if (not combined_message or not combined_message.strip()) and not (request.files and 'file' in request.files):
             return jsonify({"error": "No message or file provided"}), 400
 
         # Start a chat session with the model using the provided history.
@@ -353,7 +354,7 @@ def stream():
             # Check if this is a multipart request (file upload)
             if request.files and 'file' in request.files:
                 # Handle file upload
-                msg = request.form.get('chat', '')
+                msg = request.form.get('chat', '').strip()
                 history_str = request.form.get('history', '[]')
                 try:
                     chat_history = json.loads(history_str) if history_str else []
@@ -365,7 +366,7 @@ def stream():
                     # Extract text from file
                     extracted_text = extract_text_from_file(file)
                     # Combine extracted text with user message
-                    if msg.strip():
+                    if msg:
                         combined_message = f"Document content:\n{extracted_text}\n\nUser question: {msg}"
                     else:
                         combined_message = f"Document content:\n{extracted_text}\n\nPlease analyze this document."
@@ -377,7 +378,7 @@ def stream():
                 if request.is_json:
                     data = request.get_json()
                     if data:
-                        msg = data.get('chat', '')
+                        msg = data.get('chat', '').strip()
                         chat_history = data.get('history', [])
                         combined_message = msg
                     else:
@@ -387,7 +388,8 @@ def stream():
                     yield "Error: Content-Type not supported"
                     return
 
-            if not combined_message.strip():
+            # Check that we have either a message or a file with content
+            if (not combined_message or not combined_message.strip()) and not (request.files and 'file' in request.files):
                 yield "Error: No message or file provided"
                 return
 
