@@ -343,26 +343,26 @@ function App() {
 
 // Replace the return statement in your App.js with this:
 
-return (
-  <center>
-    <div className="chat-app">
-      <Header 
-        toggled={toggled} 
-        setToggled={setToggled} 
-        clearChatHistory={clearChatHistory}
-        hasHistory={data.length > 0}
-      />
-      <ConversationDisplayArea data={data} streamdiv={streamdiv} answer={answer} />
-      <MessageInput 
-        inputRef={inputRef} 
-        waiting={waiting} 
-        handleClick={handleClick}
-        onFileUpload={handleFileUpload}
-        uploadedFile={uploadedFile}
-        onRemoveFile={handleRemoveFile}
-        isUploading={isUploading}
-      />
-    </div>
-  </center>
-);
-export default App
+    return (
+      <center>
+        <div className="chat-app">
+          <Header 
+            toggled={toggled} 
+            setToggled={setToggled} 
+            clearChatHistory={clearChatHistory}
+            hasHistory={data.length > 0}
+          />
+          <ConversationDisplayArea data={data} streamdiv={streamdiv} answer={answer} />
+          <MessageInput 
+            inputRef={inputRef} 
+            waiting={waiting} 
+            handleClick={handleClick}
+            onFileUpload={handleFileUpload}
+            uploadedFile={uploadedFile}
+            onRemoveFile={handleRemoveFile}
+            isUploading={isUploading}
+          />
+        </div>
+      </center>
+    );
+export default App;
