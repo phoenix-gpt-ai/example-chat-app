@@ -288,6 +288,7 @@ def chat():
         msg = ""
         chat_history = []
         combined_message = ""
+        has_file = False
         
         # Check if this is a multipart request (file upload)
         if request.files and 'file' in request.files:
@@ -303,6 +304,7 @@ def chat():
             if file and file.filename and allowed_file(file.filename):
                 # Extract text from file
                 extracted_text = extract_text_from_file(file)
+                has_file = True
                 # Combine extracted text with user message
                 if msg:
                     combined_message = f"Document content:\n{extracted_text}\n\nUser question: {msg}"
@@ -323,8 +325,8 @@ def chat():
             else:
                 return jsonify({"error": "Content-Type not supported"}), 400
 
-        # Check that we have either a message or a file with content
-        if (combined_message and combined_message.strip()) and not (request.files and 'file' in request.files):
+        # Check that we have EITHER a non-empty message OR a file (or both)
+        if not combined_message or not combined_message.strip():
             return jsonify({"error": "No message or file provided"}), 400
 
         # Start a chat session with the model using the provided history.
@@ -350,6 +352,7 @@ def stream():
             msg = ""
             chat_history = []
             combined_message = ""
+            has_file = False
             
             # Check if this is a multipart request (file upload)
             if request.files and 'file' in request.files:
@@ -365,6 +368,7 @@ def stream():
                 if file and file.filename and allowed_file(file.filename):
                     # Extract text from file
                     extracted_text = extract_text_from_file(file)
+                    has_file = True
                     # Combine extracted text with user message
                     if msg:
                         combined_message = f"Document content:\n{extracted_text}\n\nUser question: {msg}"
@@ -388,8 +392,8 @@ def stream():
                     yield "Error: Content-Type not supported"
                     return
 
-            # Check that we have either a message or a file with content
-            if (combined_message and combined_message.strip()) and not (request.files and 'file' in request.files):
+            # Check that we have EITHER a non-empty message OR a file (or both)
+            if not combined_message or not combined_message.strip():
                 yield "Error: No message or file provided"
                 return
 
