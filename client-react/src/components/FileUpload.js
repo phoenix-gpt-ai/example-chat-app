@@ -1,20 +1,4 @@
-{uploadedFile && (
-        <div className="attached-file-info">
-          <div className="file-bubble">
-            <div className="file-details">
-              <span className="file-name">{uploadedFile.filename}</span>
-              <span className="file-size">{formatFileSize(uploadedFile.size)}</span>
-            </div>
-            <button 
-              className="remove-file-btn"
-              onClick={onRemoveFile}
-              title="Remove file"
-            >
-              <FontAwesomeIcon icon={faTimes} />
-            </button>
-          </div>
-        </div>
-      )}import React from 'react';
+import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPaperclip, faTimes, faFileWord } from '@fortawesome/free-solid-svg-icons';
 
@@ -72,7 +56,23 @@ const FileUpload = ({ onFileUpload, uploadedFile, onRemoveFile, isUploading }) =
         {isUploading && <div className="upload-spinner"></div>}
       </label>
 
-
+      {uploadedFile && (
+        <div className="attached-file-info">
+          <div className="file-bubble">
+            <div className="file-details">
+              <span className="file-name">{uploadedFile.filename}</span>
+              <span className="file-size">{formatFileSize(uploadedFile.size)}</span>
+            </div>
+            <button 
+              className="remove-file-btn"
+              onClick={onRemoveFile}
+              title="Remove file"
+            >
+              <FontAwesomeIcon icon={faTimes} />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
