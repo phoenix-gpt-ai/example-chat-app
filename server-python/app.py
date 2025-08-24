@@ -112,7 +112,7 @@ def chat():
             chat_history = data.get('history', [])
             combined_message = msg
 
-        if (not msg) and not has_file:
+        if not msg and not has_file:
             return jsonify({"error": "No message or file provided"}), 400
 
         chat_session = model.start_chat(history=chat_history)
