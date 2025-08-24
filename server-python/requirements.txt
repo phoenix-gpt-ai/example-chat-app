@@ -3,5 +3,5 @@ flask-cors
 python-dotenv
 google-generativeai
 gunicorn
-PyPDF2
 python-docx
+werkzeug
