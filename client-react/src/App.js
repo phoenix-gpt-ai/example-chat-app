@@ -25,6 +25,7 @@ import './App.css';
 import ConversationDisplayArea from './components/ConversationDisplayArea.js';
 import Header from './components/Header.js';
 import MessageInput from './components/MessageInput.js';
+import FileUpload from './components/FileUpload.js';
 
 function App() {
   /** Reference variable for message input button. */
@@ -35,6 +36,8 @@ function App() {
   const url = host + "/chat";
   /** URL for streaming chat. */
   const streamUrl = host + "/stream";
+  /** URL for file upload. */
+  const uploadUrl = host + "/upload";
   
   /** State variable for message history with persistence. */
   const [data, setData] = useState(() => {
@@ -71,6 +74,11 @@ function App() {
    */
   const [waiting, setWaiting] = useState(false);
   
+  /** File upload related state variables */
+  const [uploadedFile, setUploadedFile] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [fileContent, setFileContent] = useState('');
+  
   /** 
    * `is_stream` checks whether streaming is on or off based on the state of 
    * toggle button.
@@ -103,6 +111,39 @@ function App() {
     } catch (error) {
       console.error('Error clearing chat history:', error);
     }
+  };
+
+  /** Handle file upload */
+  const handleFileUpload = async (file) => {
+    setIsUploading(true);
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    try {
+      const response = await axios.post(uploadUrl, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      
+      if (response.data.success) {
+        setUploadedFile(response.data.file_info);
+        setFileContent(response.data.file_info.content);
+        console.log('File uploaded successfully:', response.data.file_info);
+      }
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      alert('Error uploading file. Please try again.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  /** Remove uploaded file */
+  const handleRemoveFile = () => {
+    setUploadedFile(null);
+    setFileContent('');
   };
 
   /** Function to scroll smoothly to the top of the mentioned checkpoint. */
@@ -138,7 +179,8 @@ function App() {
     /** Prepare POST request data. */
     const chatData = {
       chat: inputRef.current.value,
-      history: data
+      history: data,
+      file_content: fileContent
     };
 
     /** Add current user message to history. */
@@ -203,7 +245,8 @@ function App() {
     /** Prepare POST request data. */
     const chatData = {
       chat: inputRef.current.value,
-      history: data
+      history: data,
+      file_content: fileContent
     };
 
     /** Add current user message to history. */
@@ -308,6 +351,12 @@ function App() {
           hasHistory={data.length > 0}
         />
         <ConversationDisplayArea data={data} streamdiv={streamdiv} answer={answer} />
+        <FileUpload 
+          onFileUpload={handleFileUpload}
+          uploadedFile={uploadedFile}
+          onRemoveFile={handleRemoveFile}
+          isUploading={isUploading}
+        />
         <MessageInput inputRef={inputRef} waiting={waiting} handleClick={handleClick} />
       </div>
     </center>
@@ -315,4 +364,3 @@ function App() {
 }
 
 export default App;
-
