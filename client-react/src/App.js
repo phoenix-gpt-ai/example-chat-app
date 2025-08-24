@@ -114,65 +114,36 @@ function App() {
   }
 
   /** Function to validate user input. */
-  function validationCheck(str, file) {
-    // If there's a file, it's valid even if text is empty
-    if (file) return false;
-    // If no file, check if text is valid
+  function validationCheck(str) {
     return str === null || str.match(/^\s*$/) !== null;
   }
 
-  /** Handle form submission with optional file. */
-  const handleClick = (selectedFile = null) => {
-    const userMessage = inputRef.current.value;
-    
-    if (validationCheck(userMessage, selectedFile)) {
-      console.log("Empty or invalid entry and no file selected");
-      return;
-    }
-
-    if (!is_stream) {
-      /** Handle non-streaming chat. */
-      handleNonStreamingChat(selectedFile);
+  /** Handle form submission. */
+  const handleClick = () => {
+    if (validationCheck(inputRef.current.value)) {
+      console.log("Empty or invalid entry");
     } else {
-      /** Handle streaming chat. */
-      handleStreamingChat(selectedFile);
+      if (!is_stream) {
+        /** Handle non-streaming chat. */
+        handleNonStreamingChat();
+      } else {
+        /** Handle streaming chat. */
+        handleStreamingChat();
+      }
     }
   };
 
-  /** Create FormData for file upload or regular data object. */
-  const createRequestData = (file) => {
-    const userMessage = inputRef.current.value.trim();
-    
-    if (file) {
-      // Create FormData for file upload
-      const formData = new FormData();
-      formData.append('chat', userMessage);
-      formData.append('history', JSON.stringify(data));
-      formData.append('file', file);
-      return { data: formData, isFile: true, headers: {} };
-    } else {
-      // Regular JSON data
-      return { 
-        data: {
-          chat: userMessage,
-          history: data
-        }, 
-        isFile: false,
-        headers: {
-          'Content-Type': 'application/json;charset=UTF-8',
-          "Access-Control-Allow-Origin": "*",
-        }
-      };
-    }
-  };
+  /** Handle non-streaming chat. */
+  const handleNonStreamingChat = async () => {
+    /** Prepare POST request data. */
+    const chatData = {
+      chat: inputRef.current.value,
+      history: data
+    };
 
-  /** Handle non-streaming chat with optional file upload. */
-  const handleNonStreamingChat = async (selectedFile = null) => {
-    const userMessage = inputRef.current.value.trim();
-    
     /** Add current user message to history. */
     const ndata = [...data,
-      {"role": "user", "parts":[{"text": userMessage || "Document uploaded"}]}]
+      {"role": "user", "parts":[{"text": inputRef.current.value}]}]
 
     /**
      * Re-render DOM with updated history.
@@ -188,30 +159,24 @@ function App() {
     /** Scroll to the new user message. */
     executeScroll();
 
-    /** Prepare request data */
-    const requestData = createRequestData(selectedFile);
+    /** Headers for the POST request. */
+    let headerConfig = {
+      headers: {
+          'Content-Type': 'application/json;charset=UTF-8',
+          "Access-Control-Allow-Origin": "*",
+      }
+    };
 
-    /** Function to perform request. */
+    /** Function to perform POST request. */
     const fetchData = async() => {
       var modelResponse = ""
       try {
-        const response = await axios.post(url, requestData.data, {
-          headers: requestData.headers
-        });
-        
-        modelResponse = response.data.text || "No response received";
+        const response = await axios.post(url, chatData, headerConfig);
+        modelResponse = response.data.text
       } catch (error) {
-        if (error.response) {
-          console.error('Response error:', error.response.data);
-          modelResponse = `Error: ${error.response.data.error || 'Server error occurred'}`;
-        } else if (error.request) {
-          console.error('Network error:', error.request);
-          modelResponse = "Network error. Please check your connection.";
-        } else {
-          console.error('Request error:', error.message);
-          modelResponse = "Error occurred while processing your request.";
-        }
-      } finally {
+        modelResponse = "Error occurred";
+        console.error('API Error:', error);
+      }finally {
         /** Add model response to the history. */
         const updatedData = [...ndata,
           {"role": "model", "parts":[{"text": modelResponse}]}]
@@ -233,13 +198,17 @@ function App() {
     fetchData();
   };
 
-  /** Handle streaming chat with optional file upload. */
-  const handleStreamingChat = async (selectedFile = null) => {
-    const userMessage = inputRef.current.value.trim();
-    
+  /** Handle streaming chat. */
+  const handleStreamingChat = async () => {
+    /** Prepare POST request data. */
+    const chatData = {
+      chat: inputRef.current.value,
+      history: data
+    };
+
     /** Add current user message to history. */
     const ndata = [...data,
-      {"role": "user", "parts":[{"text": userMessage || "Document uploaded"}]}]
+      {"role": "user", "parts":[{"text": inputRef.current.value}]}]
 
     /**
      * Re-render DOM with updated history.
@@ -255,26 +224,24 @@ function App() {
     /** Scroll to the new user message. */
     executeScroll();
 
-    /** Prepare request data */
-    const requestData = createRequestData(selectedFile);
+    /** Headers for the POST request. */
+    let headerConfig = {
+        Accept: "application/json, text/plain, */*",
+        "Content-Type": "application/json",
+    }
 
-    /** Function to perform streaming request. */
+    /** Function to perform POST request. */
     const fetchStreamData = async() => {
       try {
         setAnswer("");
-        
         const response = await fetch(streamUrl, {
-          method: "POST",
-          headers: requestData.headers,
-          body: selectedFile ? requestData.data : JSON.stringify(requestData.data),
+          method: "post",
+          headers: headerConfig,
+          body: JSON.stringify(chatData),
         });
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        if (!response.body) {
-          throw new Error('No response body');
+        if (!response.ok || !response.body) {
+          throw response.statusText;
         }
 
         /** 
@@ -305,7 +272,7 @@ function App() {
           executeScroll();
         }
       } catch (err) {
-        modelResponse = `Error: ${err.message || 'Unknown error occurred'}`;
+        modelResponse = "Error occurred";
         console.error('Streaming Error:', err);
       } finally {
         /** Clear temporary div content. */
