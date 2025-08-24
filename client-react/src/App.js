@@ -141,7 +141,7 @@ function App() {
 
   /** Create FormData for file upload or regular data object. */
   const createRequestData = (file) => {
-    const userMessage = inputRef.current.value;
+    const userMessage = inputRef.current.value.trim();
     
     if (file) {
       // Create FormData for file upload
@@ -149,7 +149,7 @@ function App() {
       formData.append('chat', userMessage);
       formData.append('history', JSON.stringify(data));
       formData.append('file', file);
-      return { data: formData, isFile: true };
+      return { data: formData, isFile: true, headers: {} };
     } else {
       // Regular JSON data
       return { 
@@ -157,18 +157,22 @@ function App() {
           chat: userMessage,
           history: data
         }, 
-        isFile: false 
+        isFile: false,
+        headers: {
+          'Content-Type': 'application/json;charset=UTF-8',
+          "Access-Control-Allow-Origin": "*",
+        }
       };
     }
   };
 
   /** Handle non-streaming chat with optional file upload. */
   const handleNonStreamingChat = async (selectedFile = null) => {
-    const userMessage = inputRef.current.value;
+    const userMessage = inputRef.current.value.trim();
     
     /** Add current user message to history. */
     const ndata = [...data,
-      {"role": "user", "parts":[{"text": userMessage}]}]
+      {"role": "user", "parts":[{"text": userMessage || "Document uploaded"}]}]
 
     /**
      * Re-render DOM with updated history.
@@ -186,24 +190,27 @@ function App() {
 
     /** Prepare request data */
     const requestData = createRequestData(selectedFile);
-    
-    /** Headers for the request. */
-    let headerConfig = {
-      headers: selectedFile ? {} : {
-          'Content-Type': 'application/json;charset=UTF-8',
-          "Access-Control-Allow-Origin": "*",
-      }
-    };
 
     /** Function to perform request. */
     const fetchData = async() => {
       var modelResponse = ""
       try {
-        const response = await axios.post(url, requestData.data, headerConfig);
-        modelResponse = response.data.text || response.data;
+        const response = await axios.post(url, requestData.data, {
+          headers: requestData.headers
+        });
+        
+        modelResponse = response.data.text || "No response received";
       } catch (error) {
-        modelResponse = "Error occurred while processing your request.";
-        console.error('API Error:', error);
+        if (error.response) {
+          console.error('Response error:', error.response.data);
+          modelResponse = `Error: ${error.response.data.error || 'Server error occurred'}`;
+        } else if (error.request) {
+          console.error('Network error:', error.request);
+          modelResponse = "Network error. Please check your connection.";
+        } else {
+          console.error('Request error:', error.message);
+          modelResponse = "Error occurred while processing your request.";
+        }
       } finally {
         /** Add model response to the history. */
         const updatedData = [...ndata,
@@ -228,11 +235,11 @@ function App() {
 
   /** Handle streaming chat with optional file upload. */
   const handleStreamingChat = async (selectedFile = null) => {
-    const userMessage = inputRef.current.value;
+    const userMessage = inputRef.current.value.trim();
     
     /** Add current user message to history. */
     const ndata = [...data,
-      {"role": "user", "parts":[{"text": userMessage}]}]
+      {"role": "user", "parts":[{"text": userMessage || "Document uploaded"}]}]
 
     /**
      * Re-render DOM with updated history.
@@ -250,12 +257,6 @@ function App() {
 
     /** Prepare request data */
     const requestData = createRequestData(selectedFile);
-    
-    /** Headers for the request. */
-    let headerConfig = selectedFile ? {} : {
-        Accept: "application/json, text/plain, */*",
-        "Content-Type": "application/json",
-    };
 
     /** Function to perform streaming request. */
     const fetchStreamData = async() => {
@@ -263,13 +264,17 @@ function App() {
         setAnswer("");
         
         const response = await fetch(streamUrl, {
-          method: "post",
-          headers: headerConfig,
-          body: requestData.data,
+          method: "POST",
+          headers: requestData.headers,
+          body: selectedFile ? requestData.data : JSON.stringify(requestData.data),
         });
 
-        if (!response.ok || !response.body) {
-          throw response.statusText;
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        if (!response.body) {
+          throw new Error('No response body');
         }
 
         /** 
@@ -300,7 +305,7 @@ function App() {
           executeScroll();
         }
       } catch (err) {
-        modelResponse = "Error occurred while processing your request.";
+        modelResponse = `Error: ${err.message || 'Unknown error occurred'}`;
         console.error('Streaming Error:', err);
       } finally {
         /** Clear temporary div content. */
