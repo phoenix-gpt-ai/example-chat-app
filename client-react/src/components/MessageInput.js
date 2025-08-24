@@ -1,37 +1,16 @@
-/**
- * @license
- * Copyright 2024 Google LLC
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-/** Import necessary modules. */
-import React, { useState, useRef } from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPaperPlane, faPaperclip, faTimes } from '@fortawesome/free-solid-svg-icons';
-
 /** Message input component with file upload support. */
 const MessageInput = ({ inputRef, waiting, handleClick, handleFileClick }) => {
   const [selectedFile, setSelectedFile] = useState(null);
   const fileInputRef = useRef(null);
 
+  // Debug to confirm inputRef is received
+  console.log('inputRef:', inputRef);
+
   const handleFileSelect = (event) => {
     const file = event.target.files[0];
     if (file) {
-      // Check file type
       const allowedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
       const allowedExtensions = ['.pdf', '.docx', '.txt'];
-      
       const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
       
       if (allowedTypes.includes(file.type) || allowedExtensions.includes(fileExtension)) {
@@ -52,7 +31,6 @@ const MessageInput = ({ inputRef, waiting, handleClick, handleFileClick }) => {
 
   const handleSubmit = () => {
     handleClick(selectedFile);
-    // Clear file after sending
     setSelectedFile(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -69,7 +47,6 @@ const MessageInput = ({ inputRef, waiting, handleClick, handleFileClick }) => {
 
   return (
     <div className="message-input">
-      {/* File preview */}
       {selectedFile && (
         <div className="file-preview">
           <div className="file-info">
