@@ -44,7 +44,17 @@ const FileUpload = ({ onFileUpload, uploadedFile, onRemoveFile, isUploading }) =
         disabled={isUploading}
       />
       
-    
+      <label 
+        htmlFor="file-upload-compact" 
+        className={`file-upload-btn ${isUploading ? 'uploading' : ''} ${uploadedFile ? 'has-file' : ''}`}
+        title={uploadedFile ? `Attached: ${uploadedFile.filename}` : 'Attach Word document'}
+      >
+        <FontAwesomeIcon 
+          icon={uploadedFile ? faFileWord : faPaperclip} 
+          className="file-icon" 
+        />
+        {isUploading && <div className="upload-spinner"></div>}
+      </label>
 
       {uploadedFile && (
         <div className="attached-file-info">
