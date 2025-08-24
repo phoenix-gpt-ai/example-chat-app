@@ -365,4 +365,4 @@ return (
     </div>
   </center>
 );
-export default App;
+export default App
