@@ -324,7 +324,7 @@ def chat():
                 return jsonify({"error": "Content-Type not supported"}), 400
 
         # Check that we have either a message or a file with content
-        if (not combined_message or not combined_message.strip()) and not (request.files and 'file' in request.files):
+        if (combined_message and combined_message.strip()) and not (request.files and 'file' in request.files):
             return jsonify({"error": "No message or file provided"}), 400
 
         # Start a chat session with the model using the provided history.
@@ -389,7 +389,7 @@ def stream():
                     return
 
             # Check that we have either a message or a file with content
-            if (not combined_message or not combined_message.strip()) and not (request.files and 'file' in request.files):
+            if (combined_message and combined_message.strip()) and not (request.files and 'file' in request.files):
                 yield "Error: No message or file provided"
                 return
 
