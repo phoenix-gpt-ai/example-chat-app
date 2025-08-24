@@ -717,7 +717,6 @@ html, body {
   }
 }
 
-
 /* Updated Message Input Styles - Replace the existing .message-input styles */
 .message-input {
   width: 100%;
@@ -862,6 +861,12 @@ html, body {
   border-left: 6px solid transparent;
   border-right: 6px solid transparent;
   border-top: 6px solid #ffffff;
+}
+
+.file-type-icon {
+  color: #0066cc;
+  font-size: 16px;
+  flex-shrink: 0;
 }
 
 .file-details {
