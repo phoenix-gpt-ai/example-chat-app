@@ -19,9 +19,18 @@
 import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPaperPlane } from '@fortawesome/free-solid-svg-icons';
+import FileUpload from './FileUpload';
 
 /** Submission using the Enter key or button. */
-const MessageInput = ({ inputRef, waiting, handleClick }) => {
+const MessageInput = ({ 
+  inputRef, 
+  waiting, 
+  handleClick, 
+  onFileUpload, 
+  uploadedFile, 
+  onRemoveFile, 
+  isUploading 
+}) => {
   return (
     <div className="message-input">
       <input
@@ -35,14 +44,21 @@ const MessageInput = ({ inputRef, waiting, handleClick }) => {
           if (e.key === "Enter") handleClick();
         }}
       />
-      <button className="chat_msg_btn" onClick={handleClick}>
-        <span className="fa-span-send">
-          <FontAwesomeIcon icon={faPaperPlane} />
-        </span>
-      </button>
+      <div className="input-actions">
+        <FileUpload 
+          onFileUpload={onFileUpload}
+          uploadedFile={uploadedFile}
+          onRemoveFile={onRemoveFile}
+          isUploading={isUploading}
+        />
+        <button className="chat_msg_btn" onClick={handleClick} disabled={waiting}>
+          <span className="fa-span-send">
+            <FontAwesomeIcon icon={faPaperPlane} />
+          </span>
+        </button>
+      </div>
     </div>
   );
 };
 
 export default MessageInput;
-
