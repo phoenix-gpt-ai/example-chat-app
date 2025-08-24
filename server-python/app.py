@@ -27,77 +27,54 @@ from flask import (
 from flask_cors import CORS
 import google.generativeai as genai
 from dotenv import load_dotenv
-from werkzeug.utils import secure_filename
 
-# Load environment variables from a .env file located in the same directory.
+# Load environment variables
 load_dotenv()
 
-# Initialize a Flask application. Flask is used to create and manage the web server.
 app = Flask(__name__)
-
-# Apply CORS to the Flask app which allows it to accept requests from all domains.
 CORS(app)
 
-# Configure file upload settings
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+# Allowed extensions (still needed for extraction)
 ALLOWED_EXTENSIONS = {'pdf', 'docx', 'txt'}
 
 def allowed_file(filename):
-    """Check if the uploaded file has an allowed extension."""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def extract_text_from_pdf(file_stream):
-    """Extract text from PDF file."""
-    try:
-        pdf_reader = PyPDF2.PdfReader(file_stream)
-        text = ""
-        for page in pdf_reader.pages:
-            text += page.extract_text() + "\n"
-        return text.strip()
-    except Exception as e:
-        return f"Error reading PDF: {str(e)}"
+    pdf_reader = PyPDF2.PdfReader(file_stream)
+    text = ""
+    for page in pdf_reader.pages:
+        text += page.extract_text() + "\n"
+    return text.strip()
 
 def extract_text_from_docx(file_stream):
-    """Extract text from DOCX file."""
-    try:
-        doc = Document(file_stream)
-        text = ""
-        for paragraph in doc.paragraphs:
-            text += paragraph.text + "\n"
-        return text.strip()
-    except Exception as e:
-        return f"Error reading DOCX: {str(e)}"
+    doc = Document(file_stream)
+    text = ""
+    for paragraph in doc.paragraphs:
+        text += paragraph.text + "\n"
+    return text.strip()
 
 def extract_text_from_txt(file_stream):
-    """Extract text from TXT file."""
-    try:
-        return file_stream.read().decode('utf-8').strip()
-    except Exception as e:
-        return f"Error reading TXT: {str(e)}"
+    return file_stream.read().decode('utf-8').strip()
 
 def extract_text_from_file(file):
-    """Extract text from uploaded file based on its extension."""
     filename = file.filename.lower()
     file_stream = io.BytesIO(file.read())
-    
     if filename.endswith('.pdf'):
         return extract_text_from_pdf(file_stream)
     elif filename.endswith('.docx'):
         return extract_text_from_docx(file_stream)
     elif filename.endswith('.txt'):
-        file_stream.seek(0)  # Reset stream position for text files
+        file_stream.seek(0)
         return extract_text_from_txt(file_stream)
     else:
-        return "Unsupported file format"
+        return ""
 
-# WARNING: Do not share code with you API key hard coded in it.
+# Configure Gemini
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-
-# Initialize the generative model with the specified model name.
-# ADD YOUR SYSTEM INSTRUCTION HERE
 model = genai.GenerativeModel(
-    model_name="gemini-2.5-flash-lite-preview-06-17",
-    system_instruction='''The assistant is Phoenix, created by PhoenixGPT.
+    model_name='''gemini-2.5-flash-lite-preview-06-17",
+    system_instruction="The assistant is Phoenix, created by PhoenixGPT.
 Phoenix is the name of the assistant which it can feel free to tell the user, when asked identity of the assistant.
 Here is some information about Phoenix and PhoenixGPT's products in case the person asks:
 This iteration of Phoenix is Phoenix-I. Phoenix-I is a smart, efficient model for everyday use.
@@ -280,135 +257,64 @@ The survival rate for people with AIDS varies depending on treatment and other f
 
 @app.route('/chat', methods=['POST'])
 def chat():
-    """Processes user input and returns AI-generated responses.
-    
-    Now supports file uploads along with text messages.
-    """
-    try:
-        msg = ""
-        chat_history = []
+    msg = ""
+    chat_history = []
+    combined_message = ""
+
+    if request.files and 'file' in request.files:
+        msg = request.form.get('chat', '')
+        history_str = request.form.get('history', '[]')
+        try:
+            chat_history = json.loads(history_str) if history_str else []
+        except:
+            chat_history = []
+        file = request.files['file']
+        extracted_text = extract_text_from_file(file)
+        combined_message = f"Document content:\n{extracted_text}\n\nUser question: {msg}"
+    elif request.is_json:
+        data = request.get_json()
+        msg = data.get('chat', '') if data else ''
+        chat_history = data.get('history', [])
+        combined_message = msg
+    else:
         combined_message = ""
-        has_file = False
-        
-        # Check if this is a multipart request (file upload)
-        if request.files and 'file' in request.files:
-            # Handle file upload
-            msg = request.form.get('chat', '').strip()
-            history_str = request.form.get('history', '[]')
-            try:
-                chat_history = json.loads(history_str) if history_str else []
-            except json.JSONDecodeError:
-                chat_history = []
-            
-            file = request.files['file']
-            if file and file.filename and allowed_file(file.filename):
-                # Extract text from file
-                extracted_text = extract_text_from_file(file)
-                has_file = True
-                # Combine extracted text with user message
-                if msg:
-                    combined_message = f"Document content:\n{extracted_text}\n\nUser question: {msg}"
-                else:
-                    combined_message = f"Document content:\n{extracted_text}\n\nPlease analyze this document."
-            else:
-                return jsonify({"error": "Invalid file format. Supported formats: PDF, DOCX, TXT"}), 400
-        else:
-            # Handle regular JSON request (no file)
-            if request.is_json:
-                data = request.get_json()
-                if data:
-                    msg = data.get('chat', '').strip()
-                    chat_history = data.get('history', [])
-                    combined_message = msg
-                else:
-                    return jsonify({"error": "Invalid JSON data"}), 400
-            else:
-                return jsonify({"error": "Content-Type not supported"}), 400
 
-        # Check that we have EITHER a non-empty message OR a file (or both)
-        if not combined_message or not combined_message.strip():
-            return jsonify({"error": "No message or file provided"}), 400
-
-        # Start a chat session with the model using the provided history.
-        chat_session = model.start_chat(history=chat_history)
-
-        # Send the combined message to the model and get the response.
-        response = chat_session.send_message(combined_message)
-
-        return jsonify({"text": response.text})
-    
-    except Exception as e:
-        print(f"Error in chat endpoint: {str(e)}")
-        return jsonify({"error": f"Server error: {str(e)}"}), 500
+    chat_session = model.start_chat(history=chat_history)
+    response = chat_session.send_message(combined_message)
+    return jsonify({"text": response.text})
 
 @app.route("/stream", methods=["POST"])
 def stream():
-    """Streams AI responses for real-time chat interactions.
-    
-    Now supports file uploads with streaming responses.
-    """
     def generate():
-        try:
-            msg = ""
-            chat_history = []
+        msg = ""
+        chat_history = []
+        combined_message = ""
+
+        if request.files and 'file' in request.files:
+            msg = request.form.get('chat', '')
+            history_str = request.form.get('history', '[]')
+            try:
+                chat_history = json.loads(history_str) if history_str else []
+            except:
+                chat_history = []
+            file = request.files['file']
+            extracted_text = extract_text_from_file(file)
+            combined_message = f"Document content:\n{extracted_text}\n\nUser question: {msg}"
+        elif request.is_json:
+            data = request.get_json()
+            msg = data.get('chat', '') if data else ''
+            chat_history = data.get('history', [])
+            combined_message = msg
+        else:
             combined_message = ""
-            has_file = False
-            
-            # Check if this is a multipart request (file upload)
-            if request.files and 'file' in request.files:
-                # Handle file upload
-                msg = request.form.get('chat', '').strip()
-                history_str = request.form.get('history', '[]')
-                try:
-                    chat_history = json.loads(history_str) if history_str else []
-                except json.JSONDecodeError:
-                    chat_history = []
-                
-                file = request.files['file']
-                if file and file.filename and allowed_file(file.filename):
-                    # Extract text from file
-                    extracted_text = extract_text_from_file(file)
-                    has_file = True
-                    # Combine extracted text with user message
-                    if msg:
-                        combined_message = f"Document content:\n{extracted_text}\n\nUser question: {msg}"
-                    else:
-                        combined_message = f"Document content:\n{extracted_text}\n\nPlease analyze this document."
-                else:
-                    yield "Error: Invalid file format. Supported formats: PDF, DOCX, TXT"
-                    return
-            else:
-                # Handle regular JSON request (no file)
-                if request.is_json:
-                    data = request.get_json()
-                    if data:
-                        msg = data.get('chat', '').strip()
-                        chat_history = data.get('history', [])
-                        combined_message = msg
-                    else:
-                        yield "Error: Invalid JSON data"
-                        return
-                else:
-                    yield "Error: Content-Type not supported"
-                    return
 
-            # Check that we have EITHER a non-empty message OR a file (or both)
-            if not combined_message or not combined_message.strip():
-                yield "Error: No message or file provided"
-                return
+        chat_session = model.start_chat(history=chat_history)
+        response = chat_session.send_message(combined_message, stream=True)
 
-            chat_session = model.start_chat(history=chat_history)
-            response = chat_session.send_message(combined_message, stream=True)
-
-            for chunk in response:
-                yield f"{chunk.text}"
-        
-        except Exception as e:
-            print(f"Error in stream endpoint: {str(e)}")
-            yield f"Error: {str(e)}"
+        for chunk in response:
+            yield f"{chunk.text}"
 
     return Response(stream_with_context(generate()), mimetype="text/event-stream")
 
-# Configure the server to run on port 9000.
 if __name__ == '__main__':
     app.run(port=os.getenv("PORT"))
