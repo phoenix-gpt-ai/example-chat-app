@@ -114,36 +114,61 @@ function App() {
   }
 
   /** Function to validate user input. */
-  function validationCheck(str) {
+  function validationCheck(str, file) {
+    // If there's a file, it's valid even if text is empty
+    if (file) return false;
+    // If no file, check if text is valid
     return str === null || str.match(/^\s*$/) !== null;
   }
 
-  /** Handle form submission. */
-  const handleClick = () => {
-    if (validationCheck(inputRef.current.value)) {
-      console.log("Empty or invalid entry");
+  /** Handle form submission with optional file. */
+  const handleClick = (selectedFile = null) => {
+    const userMessage = inputRef.current.value;
+    
+    if (validationCheck(userMessage, selectedFile)) {
+      console.log("Empty or invalid entry and no file selected");
+      return;
+    }
+
+    if (!is_stream) {
+      /** Handle non-streaming chat. */
+      handleNonStreamingChat(selectedFile);
     } else {
-      if (!is_stream) {
-        /** Handle non-streaming chat. */
-        handleNonStreamingChat();
-      } else {
-        /** Handle streaming chat. */
-        handleStreamingChat();
-      }
+      /** Handle streaming chat. */
+      handleStreamingChat(selectedFile);
     }
   };
 
-  /** Handle non-streaming chat. */
-  const handleNonStreamingChat = async () => {
-    /** Prepare POST request data. */
-    const chatData = {
-      chat: inputRef.current.value,
-      history: data
-    };
+  /** Create FormData for file upload or regular data object. */
+  const createRequestData = (file) => {
+    const userMessage = inputRef.current.value;
+    
+    if (file) {
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append('chat', userMessage);
+      formData.append('history', JSON.stringify(data));
+      formData.append('file', file);
+      return { data: formData, isFile: true };
+    } else {
+      // Regular JSON data
+      return { 
+        data: {
+          chat: userMessage,
+          history: data
+        }, 
+        isFile: false 
+      };
+    }
+  };
 
+  /** Handle non-streaming chat with optional file upload. */
+  const handleNonStreamingChat = async (selectedFile = null) => {
+    const userMessage = inputRef.current.value;
+    
     /** Add current user message to history. */
     const ndata = [...data,
-      {"role": "user", "parts":[{"text": inputRef.current.value}]}]
+      {"role": "user", "parts":[{"text": userMessage}]}]
 
     /**
      * Re-render DOM with updated history.
@@ -159,24 +184,27 @@ function App() {
     /** Scroll to the new user message. */
     executeScroll();
 
-    /** Headers for the POST request. */
+    /** Prepare request data */
+    const requestData = createRequestData(selectedFile);
+    
+    /** Headers for the request. */
     let headerConfig = {
-      headers: {
+      headers: selectedFile ? {} : {
           'Content-Type': 'application/json;charset=UTF-8',
           "Access-Control-Allow-Origin": "*",
       }
     };
 
-    /** Function to perform POST request. */
+    /** Function to perform request. */
     const fetchData = async() => {
       var modelResponse = ""
       try {
-        const response = await axios.post(url, chatData, headerConfig);
-        modelResponse = response.data.text
+        const response = await axios.post(url, requestData.data, headerConfig);
+        modelResponse = response.data.text || response.data;
       } catch (error) {
-        modelResponse = "Error occurred";
+        modelResponse = "Error occurred while processing your request.";
         console.error('API Error:', error);
-      }finally {
+      } finally {
         /** Add model response to the history. */
         const updatedData = [...ndata,
           {"role": "model", "parts":[{"text": modelResponse}]}]
@@ -198,17 +226,13 @@ function App() {
     fetchData();
   };
 
-  /** Handle streaming chat. */
-  const handleStreamingChat = async () => {
-    /** Prepare POST request data. */
-    const chatData = {
-      chat: inputRef.current.value,
-      history: data
-    };
-
+  /** Handle streaming chat with optional file upload. */
+  const handleStreamingChat = async (selectedFile = null) => {
+    const userMessage = inputRef.current.value;
+    
     /** Add current user message to history. */
     const ndata = [...data,
-      {"role": "user", "parts":[{"text": inputRef.current.value}]}]
+      {"role": "user", "parts":[{"text": userMessage}]}]
 
     /**
      * Re-render DOM with updated history.
@@ -224,20 +248,24 @@ function App() {
     /** Scroll to the new user message. */
     executeScroll();
 
-    /** Headers for the POST request. */
-    let headerConfig = {
+    /** Prepare request data */
+    const requestData = createRequestData(selectedFile);
+    
+    /** Headers for the request. */
+    let headerConfig = selectedFile ? {} : {
         Accept: "application/json, text/plain, */*",
         "Content-Type": "application/json",
-    }
+    };
 
-    /** Function to perform POST request. */
+    /** Function to perform streaming request. */
     const fetchStreamData = async() => {
       try {
         setAnswer("");
+        
         const response = await fetch(streamUrl, {
           method: "post",
           headers: headerConfig,
-          body: JSON.stringify(chatData),
+          body: requestData.data,
         });
 
         if (!response.ok || !response.body) {
@@ -272,7 +300,7 @@ function App() {
           executeScroll();
         }
       } catch (err) {
-        modelResponse = "Error occurred";
+        modelResponse = "Error occurred while processing your request.";
         console.error('Streaming Error:', err);
       } finally {
         /** Clear temporary div content. */
