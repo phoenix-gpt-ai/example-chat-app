@@ -25,11 +25,7 @@ import FileUpload from './FileUpload';
 const MessageInput = ({ 
   inputRef, 
   waiting, 
-  handleClick, 
-  onFileUpload, 
-  uploadedFile, 
-  onRemoveFile, 
-  isUploading 
+  handleClick
 }) => {
   return (
     <div className="message-input">
