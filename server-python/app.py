@@ -160,7 +160,7 @@ def stream():
                 chat_history = data.get('history', [])
                 combined_message = msg
 
-            if (not msg) and not has_file:
+            if not msg and not has_file:
                 yield "Error: No message or file provided"
                 return
 
