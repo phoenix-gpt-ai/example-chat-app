@@ -44,13 +44,7 @@ const MessageInput = ({
           if (e.key === "Enter") handleClick();
         }}
       />
-      <div className="input-actions">
-        <FileUpload 
-          onFileUpload={onFileUpload}
-          uploadedFile={uploadedFile}
-          onRemoveFile={onRemoveFile}
-          isUploading={isUploading}
-        />
+     
         <button className="chat_msg_btn" onClick={handleClick} disabled={waiting}>
           <span className="fa-span-send">
             <FontAwesomeIcon icon={faPaperPlane} />
