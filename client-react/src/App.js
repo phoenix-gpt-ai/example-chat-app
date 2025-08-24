@@ -80,10 +80,11 @@ function App() {
   }
 
   function validationCheck(str, file) {
-    if (file) return false;
-    return str === null || str.match(/^\s*$/) !== null;
+  // If a file is provided, input is valid
+  if (file) return false;
+  // If no file, check if the string is null, undefined, or only whitespace
+  return !str || str.match(/^\s*$/) !== null;
   }
-
   const handleClick = (selectedFile = null) => {
     const userMessage = inputRef.current.value;
     if (validationCheck(userMessage, selectedFile)) return;
