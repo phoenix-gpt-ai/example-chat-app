@@ -42,9 +42,7 @@ const MessageInput = ({
       />
      
         <button className="chat_msg_btn" onClick={handleClick} disabled={waiting}>
-          <span className="fa-span-send">
-            <FontAwesomeIcon icon={faPaperPlane} />
-          </span>
+         
         </button>
       </div>
     </div>
