@@ -25,10 +25,10 @@ import Header from './components/Header.js';
 import MessageInput from './components/MessageInput.js';
 
 function App() {
-  const inputRef = useRef();
+  const inputRef = useRef(null); // Initialize useRef with null
   const host = "https://example-chat-app.onrender.com";
-  const url = host + "/chat";
-  const streamUrl = host + "/stream";
+  const url = `${host}/chat`;
+  const streamUrl = `${host}/stream`;
 
   const [data, setData] = useState(() => {
     try {
@@ -50,29 +50,39 @@ function App() {
     }
   });
   const [waiting, setWaiting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState(""); // Added for user feedback
+  const [errorMessage, setErrorMessage] = useState("");
 
   const is_stream = toggled;
 
+  // Save chat history to localStorage
   useEffect(() => {
     try {
       localStorage.setItem('phoenixChatHistory', JSON.stringify(data));
-    } catch {}
+    } catch (error) {
+      console.error('Error saving chat history:', error);
+    }
   }, [data]);
 
+  // Save streaming toggle state to localStorage
   useEffect(() => {
     try {
       localStorage.setItem('phoenixStreamingEnabled', JSON.stringify(toggled));
-    } catch {}
+    } catch (error) {
+      console.error('Error saving streaming toggle:', error);
+    }
   }, [toggled]);
 
+  // Clear chat history
   const clearChatHistory = () => {
     setData([]);
     try {
       localStorage.removeItem('phoenixChatHistory');
-    } catch {}
+    } catch (error) {
+      console.error('Error clearing chat history:', error);
+    }
   };
 
+  // Scroll to the latest message
   function executeScroll() {
     const element = document.getElementById('checkpoint');
     if (element) {
@@ -80,23 +90,25 @@ function App() {
     }
   }
 
+  // Validate input
   function validationCheck(str, file) {
-    console.log('validationCheck - str:', str, 'file:', file); // Debug log
-    // If a file is provided, input is valid
-    if (file) return false;
-    // If no file, check if the string is null, undefined, or only whitespace
-    return !str || str.match(/^\s*$/) !== null;
+    console.log('validationCheck - str:', str, 'file:', file);
+    if (file) return false; // Valid if file is provided
+    const trimmedStr = str?.trim(); // Trim whitespace
+    return !trimmedStr; // Invalid if null, undefined, or empty after trimming
   }
 
+  // Handle click event for sending message
   const handleClick = (selectedFile = null) => {
-    const userMessage = inputRef.current?.value; // Safe access
-    console.log('handleClick - userMessage:', userMessage, 'selectedFile:', selectedFile); // Debug log
+    const userMessage = inputRef.current?.value || "";
+    console.log('handleClick - userMessage:', userMessage, 'selectedFile:', selectedFile);
+
     if (validationCheck(userMessage, selectedFile)) {
       setErrorMessage("Please enter a message or upload a file.");
       return;
     }
 
-    setErrorMessage(""); // Clear any previous error
+    setErrorMessage(""); // Clear error message
     if (!is_stream) {
       handleNonStreamingChat(selectedFile);
     } else {
@@ -104,23 +116,24 @@ function App() {
     }
   };
 
+  // Create request data for API
   const createRequestData = (file) => {
     const userMessage = inputRef.current?.value || "";
-    console.log('createRequestData - userMessage:', userMessage, 'file:', file); // Debug log
+    console.log('createRequestData - userMessage:', userMessage, 'file:', file);
     if (file) {
       const formData = new FormData();
       formData.append('chat', userMessage);
       formData.append('history', JSON.stringify(data));
       formData.append('file', file);
       return { data: formData, isFile: true };
-    } else {
-      return {
-        data: { chat: userMessage, history: data },
-        isFile: false
-      };
     }
+    return {
+      data: { chat: userMessage, history: data },
+      isFile: false
+    };
   };
 
+  // Handle non-streaming chat
   const handleNonStreamingChat = async (selectedFile = null) => {
     const userMessage = inputRef.current?.value || "";
     const ndata = [...data, { role: "user", parts: [{ text: userMessage }] }];
@@ -142,9 +155,7 @@ function App() {
       const response = await axios.post(
         url,
         requestData.isFile ? requestData.data : requestData.data,
-        requestData.isFile
-          ? {} // browser sets FormData headers
-          : { headers: { "Content-Type": "application/json" } }
+        requestData.isFile ? {} : { headers: { "Content-Type": "application/json" } }
       );
       const modelResponse = response.data.text || response.data;
 
@@ -158,7 +169,7 @@ function App() {
       });
       executeScroll();
     } catch (error) {
-      console.error("API Error:", error);
+      console.error("Non-Streaming API Error:", error);
       const updatedData = [...ndata, { role: "model", parts: [{ text: "Error occurred while processing your request." }] }];
       flushSync(() => {
         setData(updatedData);
@@ -171,6 +182,7 @@ function App() {
     }
   };
 
+  // Handle streaming chat
   const handleStreamingChat = async (selectedFile = null) => {
     const userMessage = inputRef.current?.value || "";
     const ndata = [...data, { role: "user", parts: [{ text: userMessage }] }];
@@ -215,7 +227,6 @@ function App() {
         executeScroll();
       }
 
-      setAnswer("");
       const updatedData = [...ndata, { role: "model", parts: [{ text: modelResponse }] }];
       flushSync(() => {
         setData(updatedData);
@@ -226,8 +237,8 @@ function App() {
       });
       showStreamdiv(false);
       executeScroll();
-    } catch (err) {
-      console.error("Streaming Error:", err);
+    } catch (error) {
+      console.error("Streaming Error:", error);
       const updatedData = [...ndata, { role: "model", parts: [{ text: "Error occurred while processing your request." }] }];
       flushSync(() => {
         setData(updatedData);
