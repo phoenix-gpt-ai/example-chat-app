@@ -158,9 +158,7 @@ def stream():
                 chat_history = data.get('history', [])
                 combined_message = msg
 
-            if not msg and not has_file:
-                yield "Error: No message or file provided"
-                return
+            
 
             chat_session = model.start_chat(history=chat_history)
             response = chat_session.send_message(combined_message, stream=True)
