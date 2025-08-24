@@ -1,7 +1,6 @@
 {uploadedFile && (
         <div className="attached-file-info">
           <div className="file-bubble">
-            <FontAwesomeIcon icon={faFileWord} className="file-type-icon" />
             <div className="file-details">
               <span className="file-name">{uploadedFile.filename}</span>
               <span className="file-size">{formatFileSize(uploadedFile.size)}</span>
