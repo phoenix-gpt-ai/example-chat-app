@@ -50,6 +50,7 @@ function App() {
     }
   });
   const [waiting, setWaiting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(""); // Added for user feedback
 
   const is_stream = toggled;
 
@@ -80,15 +81,22 @@ function App() {
   }
 
   function validationCheck(str, file) {
-  // If a file is provided, input is valid
-  if (file) return false;
-  // If no file, check if the string is null, undefined, or only whitespace
-  return !str || str.match(/^\s*$/) !== null;
+    console.log('validationCheck - str:', str, 'file:', file); // Debug log
+    // If a file is provided, input is valid
+    if (file) return false;
+    // If no file, check if the string is null, undefined, or only whitespace
+    return !str || str.match(/^\s*$/) !== null;
   }
-  const handleClick = (selectedFile = null) => {
-    const userMessage = inputRef.current.value;
-    if (validationCheck(userMessage, selectedFile)) return;
 
+  const handleClick = (selectedFile = null) => {
+    const userMessage = inputRef.current?.value; // Safe access
+    console.log('handleClick - userMessage:', userMessage, 'selectedFile:', selectedFile); // Debug log
+    if (validationCheck(userMessage, selectedFile)) {
+      setErrorMessage("Please enter a message or upload a file.");
+      return;
+    }
+
+    setErrorMessage(""); // Clear any previous error
     if (!is_stream) {
       handleNonStreamingChat(selectedFile);
     } else {
@@ -97,7 +105,8 @@ function App() {
   };
 
   const createRequestData = (file) => {
-    const userMessage = inputRef.current.value;
+    const userMessage = inputRef.current?.value || "";
+    console.log('createRequestData - userMessage:', userMessage, 'file:', file); // Debug log
     if (file) {
       const formData = new FormData();
       formData.append('chat', userMessage);
@@ -113,13 +122,15 @@ function App() {
   };
 
   const handleNonStreamingChat = async (selectedFile = null) => {
-    const userMessage = inputRef.current.value;
+    const userMessage = inputRef.current?.value || "";
     const ndata = [...data, { role: "user", parts: [{ text: userMessage }] }];
 
     flushSync(() => {
       setData(ndata);
-      inputRef.current.value = "";
-      inputRef.current.placeholder = "Waiting for model's response";
+      if (inputRef.current) {
+        inputRef.current.value = "";
+        inputRef.current.placeholder = "Waiting for model's response";
+      }
       setWaiting(true);
     });
 
@@ -140,7 +151,9 @@ function App() {
       const updatedData = [...ndata, { role: "model", parts: [{ text: modelResponse }] }];
       flushSync(() => {
         setData(updatedData);
-        inputRef.current.placeholder = "Ask Phoenix...";
+        if (inputRef.current) {
+          inputRef.current.placeholder = "Ask Phoenix...";
+        }
         setWaiting(false);
       });
       executeScroll();
@@ -149,7 +162,9 @@ function App() {
       const updatedData = [...ndata, { role: "model", parts: [{ text: "Error occurred while processing your request." }] }];
       flushSync(() => {
         setData(updatedData);
-        inputRef.current.placeholder = "Ask Phoenix...";
+        if (inputRef.current) {
+          inputRef.current.placeholder = "Ask Phoenix...";
+        }
         setWaiting(false);
       });
       executeScroll();
@@ -157,13 +172,15 @@ function App() {
   };
 
   const handleStreamingChat = async (selectedFile = null) => {
-    const userMessage = inputRef.current.value;
+    const userMessage = inputRef.current?.value || "";
     const ndata = [...data, { role: "user", parts: [{ text: userMessage }] }];
 
     flushSync(() => {
       setData(ndata);
-      inputRef.current.value = "";
-      inputRef.current.placeholder = "Waiting for model's response";
+      if (inputRef.current) {
+        inputRef.current.value = "";
+        inputRef.current.placeholder = "Waiting for model's response";
+      }
       setWaiting(true);
     });
 
@@ -202,7 +219,9 @@ function App() {
       const updatedData = [...ndata, { role: "model", parts: [{ text: modelResponse }] }];
       flushSync(() => {
         setData(updatedData);
-        inputRef.current.placeholder = "Ask Phoenix...";
+        if (inputRef.current) {
+          inputRef.current.placeholder = "Ask Phoenix...";
+        }
         setWaiting(false);
       });
       showStreamdiv(false);
@@ -212,7 +231,9 @@ function App() {
       const updatedData = [...ndata, { role: "model", parts: [{ text: "Error occurred while processing your request." }] }];
       flushSync(() => {
         setData(updatedData);
-        inputRef.current.placeholder = "Ask Phoenix...";
+        if (inputRef.current) {
+          inputRef.current.placeholder = "Ask Phoenix...";
+        }
         setWaiting(false);
       });
       showStreamdiv(false);
@@ -231,6 +252,7 @@ function App() {
         />
         <ConversationDisplayArea data={data} streamdiv={streamdiv} answer={answer} />
         <MessageInput inputRef={inputRef} waiting={waiting} handleClick={handleClick} />
+        {errorMessage && <div style={{ color: 'red', marginTop: '10px' }}>{errorMessage}</div>}
       </div>
     </center>
   );
