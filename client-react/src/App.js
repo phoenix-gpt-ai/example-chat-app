@@ -15,46 +15,69 @@
  * limitations under the License.
  */
 
+/** Import necessary modules. */
 import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import { flushSync } from 'react-dom';
 import './App.css';
 
+/** Import necessary components. */
 import ConversationDisplayArea from './components/ConversationDisplayArea.js';
 import Header from './components/Header.js';
 import MessageInput from './components/MessageInput.js';
 
 function App() {
-  const inputRef = useRef(null); // Initialize useRef with null
-  const host = "https://example-chat-app.onrender.com";
-  const url = `${host}/chat`;
-  const streamUrl = `${host}/stream`;
-
+  /** Reference variable for message input button. */
+  const inputRef = useRef();
+  /** Host URL */
+  const host = "https://example-chat-app.onrender.com"
+  /** URL for non-streaming chat. */
+  const url = host + "/chat";
+  /** URL for streaming chat. */
+  const streamUrl = host + "/stream";
+  
+  /** State variable for message history with persistence. */
   const [data, setData] = useState(() => {
+    // Load chat history from localStorage on component initialization
     try {
       const savedHistory = localStorage.getItem('phoenixChatHistory');
       return savedHistory ? JSON.parse(savedHistory) : [];
-    } catch {
+    } catch (error) {
+      console.error('Error loading chat history:', error);
       return [];
     }
   });
-
-  const [answer, setAnswer] = useState("");
+  
+  /** State variable for Temporary streaming block. */
+  const [answer, setAnswer] = useState("")
+  /** State variable to show/hide temporary streaming block. */
   const [streamdiv, showStreamdiv] = useState(false);
+  
+  /** State variable to toggle between streaming and non-streaming response with persistence. */
   const [toggled, setToggled] = useState(() => {
+    // Load streaming preference from localStorage
     try {
       const savedToggle = localStorage.getItem('phoenixStreamingEnabled');
       return savedToggle ? JSON.parse(savedToggle) : false;
-    } catch {
+    } catch (error) {
+      console.error('Error loading streaming preference:', error);
       return false;
     }
   });
+  
+  /** 
+   * State variable used to block the user from inputting the next message until
+   * the previous conversation is completed.
+   */
   const [waiting, setWaiting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-
+  
+  /** 
+   * `is_stream` checks whether streaming is on or off based on the state of 
+   * toggle button.
+   */
   const is_stream = toggled;
 
-  // Save chat history to localStorage
+  /** Save chat history to localStorage whenever data changes */
   useEffect(() => {
     try {
       localStorage.setItem('phoenixChatHistory', JSON.stringify(data));
@@ -63,16 +86,16 @@ function App() {
     }
   }, [data]);
 
-  // Save streaming toggle state to localStorage
+  /** Save streaming preference to localStorage whenever toggled changes */
   useEffect(() => {
     try {
       localStorage.setItem('phoenixStreamingEnabled', JSON.stringify(toggled));
     } catch (error) {
-      console.error('Error saving streaming toggle:', error);
+      console.error('Error saving streaming preference:', error);
     }
   }, [toggled]);
 
-  // Clear chat history
+  /** Function to clear chat history */
   const clearChatHistory = () => {
     setData([]);
     try {
@@ -82,7 +105,7 @@ function App() {
     }
   };
 
-  // Scroll to the latest message
+  /** Function to scroll smoothly to the top of the mentioned checkpoint. */
   function executeScroll() {
     const element = document.getElementById('checkpoint');
     if (element) {
@@ -90,183 +113,206 @@ function App() {
     }
   }
 
-  // Validate input
-  function validationCheck(str, file) {
-    console.log('validationCheck - str:', str, 'file:', file);
-    if (file) return false; // Valid if file is provided
-    const trimmedStr = str?.trim(); // Trim whitespace
-    return !trimmedStr; // Invalid if null, undefined, or empty after trimming
+  /** Function to validate user input. */
+  function validationCheck(str) {
+    return str === null || str.match(/^\s*$/) !== null;
   }
 
-  // Handle click event for sending message
-  const handleClick = (selectedFile = null) => {
-    const userMessage = inputRef.current?.value || "";
-    console.log('handleClick - userMessage:', userMessage, 'selectedFile:', selectedFile);
-
-    if (validationCheck(userMessage, selectedFile)) {
-      setErrorMessage("Please enter a message or upload a file.");
-      return;
-    }
-
-    setErrorMessage(""); // Clear error message
-    if (!is_stream) {
-      handleNonStreamingChat(selectedFile);
+  /** Handle form submission. */
+  const handleClick = () => {
+    if (validationCheck(inputRef.current.value)) {
+      console.log("Empty or invalid entry");
     } else {
-      handleStreamingChat(selectedFile);
+      if (!is_stream) {
+        /** Handle non-streaming chat. */
+        handleNonStreamingChat();
+      } else {
+        /** Handle streaming chat. */
+        handleStreamingChat();
+      }
     }
   };
 
-  // Create request data for API
-  const createRequestData = (file) => {
-    const userMessage = inputRef.current?.value || "";
-    console.log('createRequestData - userMessage:', userMessage, 'file:', file);
-    if (file) {
-      const formData = new FormData();
-      formData.append('chat', userMessage);
-      formData.append('history', JSON.stringify(data));
-      formData.append('file', file);
-      return { data: formData, isFile: true };
-    }
-    return {
-      data: { chat: userMessage, history: data },
-      isFile: false
+  /** Handle non-streaming chat. */
+  const handleNonStreamingChat = async () => {
+    /** Prepare POST request data. */
+    const chatData = {
+      chat: inputRef.current.value,
+      history: data
     };
-  };
 
-  // Handle non-streaming chat
-  const handleNonStreamingChat = async (selectedFile = null) => {
-    const userMessage = inputRef.current?.value || "";
-    const ndata = [...data, { role: "user", parts: [{ text: userMessage }] }];
+    /** Add current user message to history. */
+    const ndata = [...data,
+      {"role": "user", "parts":[{"text": inputRef.current.value}]}]
 
+    /**
+     * Re-render DOM with updated history.
+     * Clear the input box and temporarily disable input.
+     */
     flushSync(() => {
-      setData(ndata);
-      if (inputRef.current) {
-        inputRef.current.value = "";
-        inputRef.current.placeholder = "Waiting for model's response";
-      }
-      setWaiting(true);
+        setData(ndata);
+        inputRef.current.value = ""
+        inputRef.current.placeholder = "Waiting for model's response"
+        setWaiting(true)
     });
 
+    /** Scroll to the new user message. */
     executeScroll();
 
-    const requestData = createRequestData(selectedFile);
-
-    try {
-      const response = await axios.post(
-        url,
-        requestData.isFile ? requestData.data : requestData.data,
-        requestData.isFile ? {} : { headers: { "Content-Type": "application/json" } }
-      );
-      const modelResponse = response.data.text || response.data;
-
-      const updatedData = [...ndata, { role: "model", parts: [{ text: modelResponse }] }];
-      flushSync(() => {
-        setData(updatedData);
-        if (inputRef.current) {
-          inputRef.current.placeholder = "Ask Phoenix...";
-        }
-        setWaiting(false);
-      });
-      executeScroll();
-    } catch (error) {
-      console.error("Non-Streaming API Error:", error);
-      const updatedData = [...ndata, { role: "model", parts: [{ text: "Error occurred while processing your request." }] }];
-      flushSync(() => {
-        setData(updatedData);
-        if (inputRef.current) {
-          inputRef.current.placeholder = "Ask Phoenix...";
-        }
-        setWaiting(false);
-      });
-      executeScroll();
-    }
-  };
-
-  // Handle streaming chat
-  const handleStreamingChat = async (selectedFile = null) => {
-    const userMessage = inputRef.current?.value || "";
-    const ndata = [...data, { role: "user", parts: [{ text: userMessage }] }];
-
-    flushSync(() => {
-      setData(ndata);
-      if (inputRef.current) {
-        inputRef.current.value = "";
-        inputRef.current.placeholder = "Waiting for model's response";
+    /** Headers for the POST request. */
+    let headerConfig = {
+      headers: {
+          'Content-Type': 'application/json;charset=UTF-8',
+          "Access-Control-Allow-Origin": "*",
       }
-      setWaiting(true);
-    });
+    };
 
-    executeScroll();
+    /** Function to perform POST request. */
+    const fetchData = async() => {
+      var modelResponse = ""
+      try {
+        const response = await axios.post(url, chatData, headerConfig);
+        modelResponse = response.data.text
+      } catch (error) {
+        modelResponse = "Error occurred";
+        console.error('API Error:', error);
+      }finally {
+        /** Add model response to the history. */
+        const updatedData = [...ndata,
+          {"role": "model", "parts":[{"text": modelResponse}]}]
 
-    const { data: payload, isFile } = createRequestData(selectedFile);
-
-    try {
-      setAnswer("");
-      showStreamdiv(true);
-
-      const response = await fetch(streamUrl, {
-        method: "POST",
-        headers: isFile ? {} : { "Content-Type": "application/json" },
-        body: isFile ? payload : JSON.stringify(payload),
-      });
-
-      if (!response.ok || !response.body) {
-        throw new Error(response.statusText);
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let modelResponse = "";
-
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        setAnswer(prev => prev + chunk);
-        modelResponse += chunk;
+        /**
+         * Re-render DOM with updated history.
+         * Enable input.
+         */
+        flushSync(() => {
+          setData(updatedData);
+          inputRef.current.placeholder = "Ask Phoenix..."
+          setWaiting(false)
+        });
+        /** Scroll to the new model response. */
         executeScroll();
       }
+    };
 
-      const updatedData = [...ndata, { role: "model", parts: [{ text: modelResponse }] }];
-      flushSync(() => {
-        setData(updatedData);
-        if (inputRef.current) {
-          inputRef.current.placeholder = "Ask Phoenix...";
-        }
-        setWaiting(false);
-      });
-      showStreamdiv(false);
-      executeScroll();
-    } catch (error) {
-      console.error("Streaming Error:", error);
-      const updatedData = [...ndata, { role: "model", parts: [{ text: "Error occurred while processing your request." }] }];
-      flushSync(() => {
-        setData(updatedData);
-        if (inputRef.current) {
-          inputRef.current.placeholder = "Ask Phoenix...";
-        }
-        setWaiting(false);
-      });
-      showStreamdiv(false);
-      executeScroll();
+    fetchData();
+  };
+
+  /** Handle streaming chat. */
+  const handleStreamingChat = async () => {
+    /** Prepare POST request data. */
+    const chatData = {
+      chat: inputRef.current.value,
+      history: data
+    };
+
+    /** Add current user message to history. */
+    const ndata = [...data,
+      {"role": "user", "parts":[{"text": inputRef.current.value}]}]
+
+    /**
+     * Re-render DOM with updated history.
+     * Clear the input box and temporarily disable input.
+     */
+    flushSync(() => {
+      setData(ndata);
+      inputRef.current.value = ""
+      inputRef.current.placeholder = "Waiting for model's response"
+      setWaiting(true)
+    });
+
+    /** Scroll to the new user message. */
+    executeScroll();
+
+    /** Headers for the POST request. */
+    let headerConfig = {
+        Accept: "application/json, text/plain, */*",
+        "Content-Type": "application/json",
     }
+
+    /** Function to perform POST request. */
+    const fetchStreamData = async() => {
+      try {
+        setAnswer("");
+        const response = await fetch(streamUrl, {
+          method: "post",
+          headers: headerConfig,
+          body: JSON.stringify(chatData),
+        });
+
+        if (!response.ok || !response.body) {
+          throw response.statusText;
+        }
+
+        /** 
+         * Creates a reader using ReadableStream interface and locks the
+         * stream to it.
+         */
+        const reader = response.body.getReader();
+        /** Create a decoder to read the stream as JavaScript string. */
+        const txtdecoder = new TextDecoder();
+        const loop = true;
+        var modelResponse = "";
+        /** Activate the temporary div to show the streaming response. */
+        showStreamdiv(true);
+
+        /** Loop until the streaming response ends. */
+        while (loop) {
+          const { value, done } = await reader.read();
+          if (done) {
+            break;
+          }
+          /**
+           * Decode the partial response received and update the temporary
+           * div with it.
+           */
+          const decodedTxt = txtdecoder.decode(value, { stream: true });
+          setAnswer((answer) => answer + decodedTxt);
+          modelResponse = modelResponse + decodedTxt;
+          executeScroll();
+        }
+      } catch (err) {
+        modelResponse = "Error occurred";
+        console.error('Streaming Error:', err);
+      } finally {
+        /** Clear temporary div content. */
+        setAnswer("")
+        /** Add the complete model response to the history. */
+        const updatedData = [...ndata,
+          {"role": "model", "parts":[{"text": modelResponse}]}]
+        /** 
+         * Re-render DOM with updated history.
+         * Enable input.
+         */
+        flushSync(() => {
+          setData(updatedData);
+          inputRef.current.placeholder = "Ask Phoenix..."
+          setWaiting(false)
+        });
+        /** Hide temporary div used for streaming content. */
+        showStreamdiv(false);
+        /** Scroll to the new model response. */
+        executeScroll();
+      }
+    };
+    fetchStreamData();
   };
 
   return (
     <center>
       <div className="chat-app">
-        <Header
-          toggled={toggled}
-          setToggled={setToggled}
+        <Header 
+          toggled={toggled} 
+          setToggled={setToggled} 
           clearChatHistory={clearChatHistory}
           hasHistory={data.length > 0}
         />
         <ConversationDisplayArea data={data} streamdiv={streamdiv} answer={answer} />
         <MessageInput inputRef={inputRef} waiting={waiting} handleClick={handleClick} />
-        {errorMessage && <div style={{ color: 'red', marginTop: '10px' }}>{errorMessage}</div>}
       </div>
     </center>
   );
 }
 
 export default App;
+
