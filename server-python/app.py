@@ -11,70 +11,37 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-import os
-import io
-import json
-import PyPDF2
-from docx import Document
 from flask import (
     Flask,
     request,
     Response,
-    stream_with_context,
-    jsonify
+    stream_with_context
 )
 from flask_cors import CORS
 import google.generativeai as genai
 from dotenv import load_dotenv
+import os
 
-# Load environment variables
+# Load environment variables from a .env file located in the same directory.
 load_dotenv()
 
+# Initialize a Flask application. Flask is used to create and manage the web server.
 app = Flask(__name__)
+
+# Apply CORS to the Flask app which allows it to accept requests from all domains.
+# This is especially useful during development and testing.
 CORS(app)
 
-# Allowed extensions (still needed for extraction)
-ALLOWED_EXTENSIONS = {'pdf', 'docx', 'txt'}
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-def extract_text_from_pdf(file_stream):
-    pdf_reader = PyPDF2.PdfReader(file_stream)
-    text = ""
-    for page in pdf_reader.pages:
-        text += page.extract_text() + "\n"
-    return text.strip()
-
-def extract_text_from_docx(file_stream):
-    doc = Document(file_stream)
-    text = ""
-    for paragraph in doc.paragraphs:
-        text += paragraph.text + "\n"
-    return text.strip()
-
-def extract_text_from_txt(file_stream):
-    return file_stream.read().decode('utf-8').strip()
-
-def extract_text_from_file(file):
-    filename = file.filename.lower()
-    file_stream = io.BytesIO(file.read())
-    if filename.endswith('.pdf'):
-        return extract_text_from_pdf(file_stream)
-    elif filename.endswith('.docx'):
-        return extract_text_from_docx(file_stream)
-    elif filename.endswith('.txt'):
-        file_stream.seek(0)
-        return extract_text_from_txt(file_stream)
-    else:
-        return ""
-
-# Configure Gemini
+# WARNING: Do not share code with you API key hard coded in it.
+# Configure the Google Generative AI's Google API key obtained
+# from the environment variable. This key authenticates requests to the Gemini API.
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+
+# Initialize the generative model with the specified model name.
+# This model will be used to process user inputs and generate responses.
 model = genai.GenerativeModel(
-    model_name='''gemini-2.5-flash-lite-preview-06-17",
-    system_instruction="The assistant is Phoenix, created by PhoenixGPT.
+    model_name="gemini-2.5-flash-lite-preview-06-17",
+    system_instruction=""" The assistant is Phoenix, created by PhoenixGPT.
 Phoenix is the name of the assistant which it can feel free to tell the user, when asked identity of the assistant.
 Here is some information about Phoenix and PhoenixGPT's products in case the person asks:
 This iteration of Phoenix is Phoenix-I. Phoenix-I is a smart, efficient model for everyday use.
@@ -252,69 +219,66 @@ The survival rate for people with AIDS varies depending on treatment and other f
 
 </healthcareagentmode_info>
 
-'''
+
+"""
 )
+
 
 @app.route('/chat', methods=['POST'])
 def chat():
-    msg = ""
-    chat_history = []
-    combined_message = ""
+    """Processes user input and returns AI-generated responses.
 
-    if request.files and 'file' in request.files:
-        msg = request.form.get('chat', '')
-        history_str = request.form.get('history', '[]')
-        try:
-            chat_history = json.loads(history_str) if history_str else []
-        except:
-            chat_history = []
-        file = request.files['file']
-        extracted_text = extract_text_from_file(file)
-        combined_message = f"Document content:\n{extracted_text}\n\nUser question: {msg}"
-    elif request.is_json:
-        data = request.get_json()
-        msg = data.get('chat', '') if data else ''
-        chat_history = data.get('history', [])
-        combined_message = msg
-    else:
-        combined_message = ""
+    This function handles POST requests to the '/chat' endpoint. It expects a JSON payload
+    containing a user message and an optional conversation history. It returns the AI's
+    response as a JSON object.
 
+    Args:
+        None (uses Flask `request` object to access POST data)
+
+    Returns:
+        A JSON object with a key "text" that contains the AI-generated response.
+    """
+    # Parse the incoming JSON data into variables.
+    data = request.json
+    msg = data.get('chat', '')
+    chat_history = data.get('history', [])
+
+    # Start a chat session with the model using the provided history.
     chat_session = model.start_chat(history=chat_history)
-    response = chat_session.send_message(combined_message)
-    return jsonify({"text": response.text})
+
+    # Send the latest user input to the model and get the response.
+    response = chat_session.send_message(msg)
+
+    return {"text": response.text}
 
 @app.route("/stream", methods=["POST"])
 def stream():
-    def generate():
-        msg = ""
-        chat_history = []
-        combined_message = ""
+    """Streams AI responses for real-time chat interactions.
 
-        if request.files and 'file' in request.files:
-            msg = request.form.get('chat', '')
-            history_str = request.form.get('history', '[]')
-            try:
-                chat_history = json.loads(history_str) if history_str else []
-            except:
-                chat_history = []
-            file = request.files['file']
-            extracted_text = extract_text_from_file(file)
-            combined_message = f"Document content:\n{extracted_text}\n\nUser question: {msg}"
-        elif request.is_json:
-            data = request.get_json()
-            msg = data.get('chat', '') if data else ''
-            chat_history = data.get('history', [])
-            combined_message = msg
-        else:
-            combined_message = ""
+    This function initiates a streaming session with the Gemini AI model,
+    continuously sending user inputs and streaming back the responses. It handles
+    POST requests to the '/stream' endpoint with a JSON payload similar to the
+    '/chat' endpoint.
+
+    Args:
+        None (uses Flask `request` object to access POST data)
+
+    Returns:
+        A Flask `Response` object that streams the AI-generated responses.
+    """
+    def generate():
+        data = request.json
+        msg = data.get('chat', '')
+        chat_history = data.get('history', [])
 
         chat_session = model.start_chat(history=chat_history)
-        response = chat_session.send_message(combined_message, stream=True)
+        response = chat_session.send_message(msg, stream=True)
 
         for chunk in response:
             yield f"{chunk.text}"
 
     return Response(stream_with_context(generate()), mimetype="text/event-stream")
 
+# Configure the server to run on port 9000.
 if __name__ == '__main__':
     app.run(port=os.getenv("PORT"))
