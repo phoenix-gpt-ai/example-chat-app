@@ -285,31 +285,43 @@ def chat():
     Now supports file uploads along with text messages.
     """
     try:
-        # Handle both multipart form data and JSON
-        if request.content_type and 'multipart/form-data' in request.content_type:
+        msg = ""
+        chat_history = []
+        combined_message = ""
+        
+        # Check if this is a multipart request (file upload)
+        if request.files and 'file' in request.files:
             # Handle file upload
             msg = request.form.get('chat', '')
             history_str = request.form.get('history', '[]')
-            chat_history = json.loads(history_str) if history_str else []
+            try:
+                chat_history = json.loads(history_str) if history_str else []
+            except json.JSONDecodeError:
+                chat_history = []
             
-            # Check if file is uploaded
-            if 'file' in request.files:
-                file = request.files['file']
-                if file and file.filename and allowed_file(file.filename):
-                    # Extract text from file
-                    extracted_text = extract_text_from_file(file)
-                    # Combine extracted text with user message
-                    combined_message = f"Document content:\n{extracted_text}\n\nUser question: {msg}" if msg else f"Document content:\n{extracted_text}"
+            file = request.files['file']
+            if file and file.filename and allowed_file(file.filename):
+                # Extract text from file
+                extracted_text = extract_text_from_file(file)
+                # Combine extracted text with user message
+                if msg.strip():
+                    combined_message = f"Document content:\n{extracted_text}\n\nUser question: {msg}"
                 else:
-                    return jsonify({"error": "Invalid file format. Supported formats: PDF, DOCX, TXT"}), 400
+                    combined_message = f"Document content:\n{extracted_text}\n\nPlease analyze this document."
             else:
-                combined_message = msg
+                return jsonify({"error": "Invalid file format. Supported formats: PDF, DOCX, TXT"}), 400
         else:
             # Handle regular JSON request (no file)
-            data = request.json
-            msg = data.get('chat', '')
-            chat_history = data.get('history', [])
-            combined_message = msg
+            if request.is_json:
+                data = request.get_json()
+                if data:
+                    msg = data.get('chat', '')
+                    chat_history = data.get('history', [])
+                    combined_message = msg
+                else:
+                    return jsonify({"error": "Invalid JSON data"}), 400
+            else:
+                return jsonify({"error": "Content-Type not supported"}), 400
 
         if not combined_message.strip():
             return jsonify({"error": "No message or file provided"}), 400
@@ -320,10 +332,11 @@ def chat():
         # Send the combined message to the model and get the response.
         response = chat_session.send_message(combined_message)
 
-        return {"text": response.text}
+        return jsonify({"text": response.text})
     
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        print(f"Error in chat endpoint: {str(e)}")
+        return jsonify({"error": f"Server error: {str(e)}"}), 500
 
 @app.route("/stream", methods=["POST"])
 def stream():
@@ -333,32 +346,46 @@ def stream():
     """
     def generate():
         try:
-            # Handle both multipart form data and JSON
-            if request.content_type and 'multipart/form-data' in request.content_type:
+            msg = ""
+            chat_history = []
+            combined_message = ""
+            
+            # Check if this is a multipart request (file upload)
+            if request.files and 'file' in request.files:
                 # Handle file upload
                 msg = request.form.get('chat', '')
                 history_str = request.form.get('history', '[]')
-                chat_history = json.loads(history_str) if history_str else []
+                try:
+                    chat_history = json.loads(history_str) if history_str else []
+                except json.JSONDecodeError:
+                    chat_history = []
                 
-                # Check if file is uploaded
-                if 'file' in request.files:
-                    file = request.files['file']
-                    if file and file.filename and allowed_file(file.filename):
-                        # Extract text from file
-                        extracted_text = extract_text_from_file(file)
-                        # Combine extracted text with user message
-                        combined_message = f"Document content:\n{extracted_text}\n\nUser question: {msg}" if msg else f"Document content:\n{extracted_text}"
+                file = request.files['file']
+                if file and file.filename and allowed_file(file.filename):
+                    # Extract text from file
+                    extracted_text = extract_text_from_file(file)
+                    # Combine extracted text with user message
+                    if msg.strip():
+                        combined_message = f"Document content:\n{extracted_text}\n\nUser question: {msg}"
                     else:
-                        yield "Error: Invalid file format. Supported formats: PDF, DOCX, TXT"
-                        return
+                        combined_message = f"Document content:\n{extracted_text}\n\nPlease analyze this document."
                 else:
-                    combined_message = msg
+                    yield "Error: Invalid file format. Supported formats: PDF, DOCX, TXT"
+                    return
             else:
                 # Handle regular JSON request (no file)
-                data = request.json
-                msg = data.get('chat', '')
-                chat_history = data.get('history', [])
-                combined_message = msg
+                if request.is_json:
+                    data = request.get_json()
+                    if data:
+                        msg = data.get('chat', '')
+                        chat_history = data.get('history', [])
+                        combined_message = msg
+                    else:
+                        yield "Error: Invalid JSON data"
+                        return
+                else:
+                    yield "Error: Content-Type not supported"
+                    return
 
             if not combined_message.strip():
                 yield "Error: No message or file provided"
@@ -371,6 +398,7 @@ def stream():
                 yield f"{chunk.text}"
         
         except Exception as e:
+            print(f"Error in stream endpoint: {str(e)}")
             yield f"Error: {str(e)}"
 
     return Response(stream_with_context(generate()), mimetype="text/event-stream")
