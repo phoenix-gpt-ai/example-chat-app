@@ -752,12 +752,7 @@ html, body {
 }
 
 /* Compact File Upload Styles */
-.file-upload-compact {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
+
 
 .file-upload-btn {
   background: #6c757d;
