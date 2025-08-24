@@ -1,20 +1,3 @@
-/**
- * @license
- * Copyright 2024 Google LLC
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import { flushSync } from 'react-dom';
@@ -26,6 +9,8 @@ import MessageInput from './components/MessageInput.js';
 
 function App() {
   const inputRef = useRef(null); // Initialize useRef with null
+  console.log('App: inputRef initialized:', inputRef); // Debug ref initialization
+
   const host = "https://example-chat-app.onrender.com";
   const url = `${host}/chat`;
   const streamUrl = `${host}/stream`;
@@ -100,7 +85,12 @@ function App() {
 
   // Handle click event for sending message
   const handleClick = (selectedFile = null) => {
-    const userMessage = inputRef.current?.value || "";
+    if (!inputRef.current) {
+      console.error('App: inputRef.current is null');
+      setErrorMessage('Input field is not available. Please try again.');
+      return;
+    }
+    const userMessage = inputRef.current.value || "";
     console.log('handleClick - userMessage:', userMessage, 'selectedFile:', selectedFile);
 
     if (validationCheck(userMessage, selectedFile)) {
@@ -108,7 +98,7 @@ function App() {
       return;
     }
 
-    setErrorMessage(""); // Clear error message
+    setErrorMessage("");
     if (!is_stream) {
       handleNonStreamingChat(selectedFile);
     } else {
@@ -118,7 +108,11 @@ function App() {
 
   // Create request data for API
   const createRequestData = (file) => {
-    const userMessage = inputRef.current?.value || "";
+    if (!inputRef.current) {
+      console.error('App: inputRef.current is null in createRequestData');
+      return { data: {}, isFile: false };
+    }
+    const userMessage = inputRef.current.value || "";
     console.log('createRequestData - userMessage:', userMessage, 'file:', file);
     if (file) {
       const formData = new FormData();
@@ -135,15 +129,18 @@ function App() {
 
   // Handle non-streaming chat
   const handleNonStreamingChat = async (selectedFile = null) => {
-    const userMessage = inputRef.current?.value || "";
+    if (!inputRef.current) {
+      console.error('App: inputRef.current is null in handleNonStreamingChat');
+      setErrorMessage('Input field is not available.');
+      return;
+    }
+    const userMessage = inputRef.current.value || "";
     const ndata = [...data, { role: "user", parts: [{ text: userMessage }] }];
 
     flushSync(() => {
       setData(ndata);
-      if (inputRef.current) {
-        inputRef.current.value = "";
-        inputRef.current.placeholder = "Waiting for model's response";
-      }
+      inputRef.current.value = "";
+      inputRef.current.placeholder = "Waiting for model's response";
       setWaiting(true);
     });
 
@@ -162,9 +159,7 @@ function App() {
       const updatedData = [...ndata, { role: "model", parts: [{ text: modelResponse }] }];
       flushSync(() => {
         setData(updatedData);
-        if (inputRef.current) {
-          inputRef.current.placeholder = "Ask Phoenix...";
-        }
+        inputRef.current.placeholder = "Ask Phoenix...";
         setWaiting(false);
       });
       executeScroll();
@@ -173,9 +168,7 @@ function App() {
       const updatedData = [...ndata, { role: "model", parts: [{ text: "Error occurred while processing your request." }] }];
       flushSync(() => {
         setData(updatedData);
-        if (inputRef.current) {
-          inputRef.current.placeholder = "Ask Phoenix...";
-        }
+        inputRef.current.placeholder = "Ask Phoenix...";
         setWaiting(false);
       });
       executeScroll();
@@ -184,15 +177,18 @@ function App() {
 
   // Handle streaming chat
   const handleStreamingChat = async (selectedFile = null) => {
-    const userMessage = inputRef.current?.value || "";
+    if (!inputRef.current) {
+      console.error('App: inputRef.current is null in handleStreamingChat');
+      setErrorMessage('Input field is not available.');
+      return;
+    }
+    const userMessage = inputRef.current.value || "";
     const ndata = [...data, { role: "user", parts: [{ text: userMessage }] }];
 
     flushSync(() => {
       setData(ndata);
-      if (inputRef.current) {
-        inputRef.current.value = "";
-        inputRef.current.placeholder = "Waiting for model's response";
-      }
+      inputRef.current.value = "";
+      inputRef.current.placeholder = "Waiting for model's response";
       setWaiting(true);
     });
 
@@ -230,9 +226,7 @@ function App() {
       const updatedData = [...ndata, { role: "model", parts: [{ text: modelResponse }] }];
       flushSync(() => {
         setData(updatedData);
-        if (inputRef.current) {
-          inputRef.current.placeholder = "Ask Phoenix...";
-        }
+        inputRef.current.placeholder = "Ask Phoenix...";
         setWaiting(false);
       });
       showStreamdiv(false);
@@ -242,9 +236,7 @@ function App() {
       const updatedData = [...ndata, { role: "model", parts: [{ text: "Error occurred while processing your request." }] }];
       flushSync(() => {
         setData(updatedData);
-        if (inputRef.current) {
-          inputRef.current.placeholder = "Ask Phoenix...";
-        }
+        inputRef.current.placeholder = "Ask Phoenix...";
         setWaiting(false);
       });
       showStreamdiv(false);
