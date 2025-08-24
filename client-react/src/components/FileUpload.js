@@ -50,7 +50,7 @@ const FileUpload = ({ onFileUpload, uploadedFile, onRemoveFile, isUploading }) =
         title={uploadedFile ? `Attached: ${uploadedFile.filename}` : 'Attach Word document'}
       >
         <FontAwesomeIcon 
-          icon={uploadedFile ? faFileWord : faPaperclip} 
+          icon={faPaperclip} 
           className="file-icon" 
         />
         {isUploading && <div className="upload-spinner"></div>}
@@ -59,6 +59,7 @@ const FileUpload = ({ onFileUpload, uploadedFile, onRemoveFile, isUploading }) =
       {uploadedFile && (
         <div className="attached-file-info">
           <div className="file-bubble">
+            <FontAwesomeIcon icon={faFileWord} className="file-type-icon" />
             <div className="file-details">
               <span className="file-name">{uploadedFile.filename}</span>
               <span className="file-size">{formatFileSize(uploadedFile.size)}</span>
