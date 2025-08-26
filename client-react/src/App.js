@@ -77,6 +77,7 @@ function App() {
   /** File upload related state variables */
   const [uploadedFile, setUploadedFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [fileContent, setFileContent] = useState('');
   
   /** 
    * `is_stream` checks whether streaming is on or off based on the state of 
@@ -128,6 +129,7 @@ function App() {
       
       if (response.data.success) {
         setUploadedFile(response.data.file_info);
+        setFileContent(response.data.file_info.content);
         console.log('File uploaded successfully:', response.data.file_info);
       }
     } catch (error) {
@@ -141,6 +143,7 @@ function App() {
   /** Remove uploaded file */
   const handleRemoveFile = () => {
     setUploadedFile(null);
+    setFileContent('');
   };
 
   /** Function to scroll smoothly to the top of the mentioned checkpoint. */
@@ -173,44 +176,26 @@ function App() {
 
   /** Handle non-streaming chat. */
   const handleNonStreamingChat = async () => {
-    const userMessage = inputRef.current.value;
-    const currentFile = uploadedFile; // Capture current file
-    
     /** Prepare POST request data. */
     const chatData = {
-      chat: userMessage,
+      chat: inputRef.current.value,
       history: data,
-      file_content: currentFile ? currentFile.content : ''
+      file_content: fileContent
     };
-
-    /** Create user message object with file info if available */
-    const userMessageObj = {
-      role: "user", 
-      parts: [{ text: userMessage }]
-    };
-    
-    // Add file info to user message if file is attached
-    if (currentFile) {
-      userMessageObj.file = {
-        filename: currentFile.filename,
-        type: currentFile.type,
-        size: currentFile.size
-      };
-    }
 
     /** Add current user message to history. */
-    const ndata = [...data, userMessageObj];
+    const ndata = [...data,
+      {"role": "user", "parts":[{"text": inputRef.current.value}]}]
 
     /**
      * Re-render DOM with updated history.
-     * Clear the input box, remove file, and temporarily disable input.
+     * Clear the input box and temporarily disable input.
      */
     flushSync(() => {
         setData(ndata);
-        inputRef.current.value = "";
-        inputRef.current.placeholder = "Waiting for model's response";
-        setWaiting(true);
-        setUploadedFile(null); // Clear file after sending
+        inputRef.current.value = ""
+        inputRef.current.placeholder = "Waiting for model's response"
+        setWaiting(true)
     });
 
     /** Scroll to the new user message. */
@@ -257,44 +242,26 @@ function App() {
 
   /** Handle streaming chat. */
   const handleStreamingChat = async () => {
-    const userMessage = inputRef.current.value;
-    const currentFile = uploadedFile; // Capture current file
-    
     /** Prepare POST request data. */
     const chatData = {
-      chat: userMessage,
+      chat: inputRef.current.value,
       history: data,
-      file_content: currentFile ? currentFile.content : ''
+      file_content: fileContent
     };
-
-    /** Create user message object with file info if available */
-    const userMessageObj = {
-      role: "user", 
-      parts: [{ text: userMessage }]
-    };
-    
-    // Add file info to user message if file is attached
-    if (currentFile) {
-      userMessageObj.file = {
-        filename: currentFile.filename,
-        type: currentFile.type,
-        size: currentFile.size
-      };
-    }
 
     /** Add current user message to history. */
-    const ndata = [...data, userMessageObj];
+    const ndata = [...data,
+      {"role": "user", "parts":[{"text": inputRef.current.value}]}]
 
     /**
      * Re-render DOM with updated history.
-     * Clear the input box, remove file, and temporarily disable input.
+     * Clear the input box and temporarily disable input.
      */
     flushSync(() => {
       setData(ndata);
-      inputRef.current.value = "";
-      inputRef.current.placeholder = "Waiting for model's response";
-      setWaiting(true);
-      setUploadedFile(null); // Clear file after sending
+      inputRef.current.value = ""
+      inputRef.current.placeholder = "Waiting for model's response"
+      setWaiting(true)
     });
 
     /** Scroll to the new user message. */
@@ -373,6 +340,10 @@ function App() {
     };
     fetchStreamData();
   };
+
+// Replace the return statement in your App.js with this:
+
+    // Replace the return statement in your App.js with this:
 
   return (
     <center>
