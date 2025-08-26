@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import Markdown from 'react-markdown';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faFileWord, faPaperclip } from '@fortawesome/free-solid-svg-icons';
 import userIcon from '../assets/user-icon.png';
 // TODO: Consider replacing chatbotIcon with its own distinct icon.
 import chatbotIcon from '../../public/logo92.png'
@@ -54,6 +56,14 @@ const ChatArea = ({ data, streamdiv, answer }) => {
     }
   };
 
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  };
+
   return (
     <div className="chat-area">
       {data?.length <= 0 ? (
@@ -72,6 +82,19 @@ const ChatArea = ({ data, streamdiv, answer }) => {
             alt="Icon" 
           />
           <div className="message-content">
+            {/* Display file attachment for user messages if present */}
+            {element.role === "user" && element.file && (
+              <div className="attached-file-display">
+                <FontAwesomeIcon 
+                  icon={element.file.type === 'docx' ? faFileWord : faPaperclip} 
+                  className="file-display-icon" 
+                />
+                <div className="file-display-info">
+                  <span className="file-display-name">{element.file.filename}</span>
+                  <span className="file-display-size">{formatFileSize(element.file.size)}</span>
+                </div>
+              </div>
+            )}
             <p><Markdown children={element.parts[0].text} /></p>
             {element.role === "model" && (
               <button 
