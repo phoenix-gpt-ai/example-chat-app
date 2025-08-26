@@ -952,95 +952,98 @@ html, body {
   }
 }
 /* File display in chat history styles */
+/* File display in chat history styles */
 .attached-file-display {
-  background: rgba(0, 123, 255, 0.1);
-  border: 1px solid rgba(0, 123, 255, 0.2);
-  border-radius: 12px;
-  padding: 8px 12px;
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 6px 10px;
   margin-bottom: 8px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  font-size: 12px;
+  color: #6c757d;
   max-width: fit-content;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .user .attached-file-display {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(4px);
 }
 
 .file-display-icon {
-  color: #0066cc;
-  font-size: 16px;
+  color: #28a745;
+  font-size: 14px;
   flex-shrink: 0;
 }
 
 .user .file-display-icon {
-  color: #ffffff;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .file-display-info {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  gap: 6px;
   min-width: 0;
 }
 
 .file-display-name {
-  font-size: 12px;
   font-weight: 500;
-  color: #495057;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 200px;
-}
-
-.user .file-display-name {
-  color: #ffffff;
+  max-width: 120px;
 }
 
 .file-display-size {
-  font-size: 10px;
-  color: #6c757d;
-}
-
-.user .file-display-size {
-  color: rgba(255, 255, 255, 0.8);
+  opacity: 0.7;
+  font-size: 11px;
 }
 
 /* Mobile responsive adjustments for file display */
 @media screen and (max-width: 767px) {
   .attached-file-display {
-    padding: 6px 10px;
+    padding: 4px 8px;
+    font-size: 11px;
   }
   
   .file-display-name {
-    font-size: 11px;
-    max-width: 150px;
+    max-width: 100px;
   }
   
   .file-display-size {
-    font-size: 9px;
+    font-size: 10px;
   }
   
   .file-display-icon {
-    font-size: 14px;
+    font-size: 12px;
   }
 }
 
 /* Dark mode support for file display */
 @media (prefers-color-scheme: dark) {
   .attached-file-display {
-    background: rgba(0, 123, 255, 0.15);
-    border-color: rgba(0, 123, 255, 0.3);
-  }
-  
-  .file-display-name {
-    color: #ffffff;
-  }
-  
-  .file-display-size {
+    background: #2d2d2d;
+    border-color: #404040;
     color: #cccccc;
+  }
+  
+  .user .attached-file-display {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.8);
+  }
+  
+  .file-display-icon {
+    color: #28a745;
+  }
+  
+  .user .file-display-icon {
+    color: rgba(255, 255, 255, 0.8);
   }
 }
