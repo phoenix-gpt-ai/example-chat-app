@@ -951,3 +951,96 @@ html, body {
     color: #cccccc;
   }
 }
+/* File display in chat history styles */
+.attached-file-display {
+  background: rgba(0, 123, 255, 0.1);
+  border: 1px solid rgba(0, 123, 255, 0.2);
+  border-radius: 12px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: fit-content;
+}
+
+.user .attached-file-display {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.file-display-icon {
+  color: #0066cc;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.user .file-display-icon {
+  color: #ffffff;
+}
+
+.file-display-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.file-display-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: #495057;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.user .file-display-name {
+  color: #ffffff;
+}
+
+.file-display-size {
+  font-size: 10px;
+  color: #6c757d;
+}
+
+.user .file-display-size {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Mobile responsive adjustments for file display */
+@media screen and (max-width: 767px) {
+  .attached-file-display {
+    padding: 6px 10px;
+  }
+  
+  .file-display-name {
+    font-size: 11px;
+    max-width: 150px;
+  }
+  
+  .file-display-size {
+    font-size: 9px;
+  }
+  
+  .file-display-icon {
+    font-size: 14px;
+  }
+}
+
+/* Dark mode support for file display */
+@media (prefers-color-scheme: dark) {
+  .attached-file-display {
+    background: rgba(0, 123, 255, 0.15);
+    border-color: rgba(0, 123, 255, 0.3);
+  }
+  
+  .file-display-name {
+    color: #ffffff;
+  }
+  
+  .file-display-size {
+    color: #cccccc;
+  }
+}
