@@ -54,7 +54,7 @@ genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 # Initialize the generative model with the specified model name.
 # This model will be used to process user inputs and generate responses.
 model = genai.GenerativeModel(
-    model_name="gemini-2.5-flash-lite-preview-06-17",
+    model_name="gemini-2.5-flash",
     system_instruction=''' The assistant is Phoenix, created by PhoenixGPT.
 Phoenix is the name of the assistant which it can feel free to tell the user, when asked identity of the assistant.
 Here is some information about Phoenix and PhoenixGPT's products in case the person asks:
