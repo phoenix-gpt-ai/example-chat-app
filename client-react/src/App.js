@@ -31,7 +31,7 @@ function App() {
   /** Reference variable for message input button. */
   const inputRef = useRef();
   /** Host URL */
-  const host = "https://example-chat-app.onrender.com"
+  const host = "example-chat-app-wbp3.vercel.app"
   /** URL for non-streaming chat. */
   const url = host + "/chat";
   /** URL for streaming chat. */
