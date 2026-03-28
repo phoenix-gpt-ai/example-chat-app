@@ -357,5 +357,4 @@ def stream():
     return Response(stream_with_context(generate()), mimetype="text/event-stream")
 
 # Configure the server to run on port 9000.
-if __name__ == '__main__':
-    app.run(port=os.getenv("PORT"))
+
