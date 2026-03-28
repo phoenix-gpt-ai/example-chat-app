@@ -358,3 +358,6 @@ def stream():
 
 # Configure the server to run on port 9000.
 
+# Configure the server to run on port 9000.
+if __name__ == '__main__':
+    app.run(port=os.getenv("PORT"))
