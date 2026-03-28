@@ -31,7 +31,7 @@ function App() {
   /** Reference variable for message input button. */
   const inputRef = useRef();
   /** Host URL */
-  const host = "https://example-chat-app-wbp3-git-main-phoenix-gpt-ais-projects.vercel.app"
+  const host = "https://www.example-chat-app.onrender.com"
   /** URL for non-streaming chat. */
   const url = host + "/chat";
   /** URL for streaming chat. */
